@@ -380,8 +380,8 @@ export default function TimeSinceTimer() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      {/* Music track (place at /public/track.mp3) */}
-      <audio ref={audioRef} src="/track.mp3" preload="metadata" />
+      {/* Music track (place at /public/heartbeat.mp3) */}
+      <audio ref={audioRef} src="/heartbeat.mp3" preload="metadata" />
 
       {/* Sticky Entries panel */}
       <div className="fixed right-3 top-3 z-50 w-[92vw] max-w-md sm:right-4 sm:top-4">
