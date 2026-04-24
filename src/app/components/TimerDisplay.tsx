@@ -37,7 +37,7 @@ export default function TimerDisplay({
           Start: <span className="text-white/90">{formattedStart}</span>
         </div>
 
-        <motion.button
+        {/* <motion.button
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.98 }}
           type="button"
@@ -46,7 +46,7 @@ export default function TimerDisplay({
           className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-sm font-semibold text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-50"
         >
           {isResetting ? "Resetting…" : "Reset"}
-        </motion.button>
+        </motion.button> */}
       </div>
 
       {/* Elapsed counter */}
