@@ -1,201 +1,395 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useRef } from "react";
 
-const WAVE_PATH = `
-  M0 100
-  L90 100
-  L110 96
-  L130 104
-  L160 100
-  L220 100
-  L238 92
-  L246 115
-  L255 60
-  L266 150
-  L278 100
-  L310 100
-  L360 100
-  L378 94
-  L388 104
-  L420 100
-  L520 100
+/* ──────────────────────────────────────────────────────────
+ *  ECGLine — full-screen canvas background that draws a
+ *  continuous heartbeat monitor sweep with:
+ *    • Realistic PQRST waveform shape
+ *    • Smooth phosphor glow + afterglow fade trail
+ *    • A bright sweep head dot
+ *    • Faint medical-style grid in the background
+ *  Runs entirely on rAF — zero framer-motion overhead.
+ * ────────────────────────────────────────────────────────── */
 
-  L610 100
-  L630 96
-  L650 104
-  L680 100
-  L740 100
-  L758 92
-  L766 115
-  L775 60
-  L786 150
-  L798 100
-  L830 100
-  L880 100
-  L898 94
-  L908 104
-  L940 100
-  L1200 100
-`;
+// ── PQRST waveform definition ────────────────────────────
+// Each segment is [dx, dy] relative to the previous point.
+// The full beat spans ~200 units of x-space; baseline is y = 0.
+
+function buildBeatPath(): { x: number; y: number }[] {
+  // A single realistic PQRST complex. Y is inverted (negative = up).
+  // Total dx ≈ 220 units
+  const raw: [number, number][] = [
+    // flat lead-in
+    [0, 0],
+    [30, 0],
+    // P wave (small bump)
+    [6, -4],
+    [6, -8],
+    [6, -6],
+    [6, -2],
+    [6, 0],
+    // PR segment
+    [14, 0],
+    // Q dip
+    [4, 6],
+    // R spike (tall sharp peak)
+    [5, -60],
+    // S dip
+    [5, 30],
+    [4, 16],
+    [3, 8],
+    // ST segment (slight elevation)
+    [10, -1],
+    [8, -1],
+    // T wave (broad bump)
+    [6, -4],
+    [6, -10],
+    [8, -12],
+    [8, -8],
+    [6, -2],
+    [6, 2],
+    // flat lead-out
+    [24, 0],
+    [30, 0],
+  ];
+
+  const points: { x: number; y: number }[] = [];
+  let cx = 0;
+  let cy = 0;
+
+  for (const [dx, dy] of raw) {
+    cx += dx;
+    cy += dy;
+    points.push({ x: cx, y: cy });
+  }
+
+  return points;
+}
+
+const BEAT_POINTS = buildBeatPath();
+const BEAT_WIDTH = BEAT_POINTS[BEAT_POINTS.length - 1].x;
+
+/** Interpolate the waveform at arbitrary x within one beat. */
+function sampleBeat(xInBeat: number): number {
+  if (xInBeat <= 0) return BEAT_POINTS[0].y;
+  if (xInBeat >= BEAT_WIDTH) return BEAT_POINTS[BEAT_POINTS.length - 1].y;
+
+  for (let i = 1; i < BEAT_POINTS.length; i++) {
+    const prev = BEAT_POINTS[i - 1];
+    const cur = BEAT_POINTS[i];
+    if (xInBeat <= cur.x) {
+      const t = (xInBeat - prev.x) / (cur.x - prev.x);
+      // Smooth cubic interpolation for natural curves
+      const tSmooth = t * t * (3 - 2 * t);
+      return prev.y + (cur.y - prev.y) * tSmooth;
+    }
+  }
+
+  return 0;
+}
+
+// ── Constants ────────────────────────────────────────────
+
+const SWEEP_SPEED = 120; // pixels per second
+const GLOW_COLOR = "0, 255, 136";
+const HEAD_RADIUS = 4;
+const TRAIL_LENGTH = 0.55; // fraction of canvas width that glows behind the head
+const AFTERGLOW_LENGTH = 0.85; // fraction that shows faint trace
+
+// ── Grid renderer ────────────────────────────────────────
+
+function drawGrid(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  dpr: number,
+) {
+  const cellSize = 46 * dpr;
+
+  // Sub-grid
+  ctx.strokeStyle = `rgba(${GLOW_COLOR}, 0.04)`;
+  ctx.lineWidth = 0.5 * dpr;
+  ctx.beginPath();
+  for (let x = 0; x < w; x += cellSize / 5) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+  }
+  for (let y = 0; y < h; y += cellSize / 5) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+  }
+  ctx.stroke();
+
+  // Main grid
+  ctx.strokeStyle = `rgba(${GLOW_COLOR}, 0.08)`;
+  ctx.lineWidth = 1 * dpr;
+  ctx.beginPath();
+  for (let x = 0; x < w; x += cellSize) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+  }
+  for (let y = 0; y < h; y += cellSize) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+  }
+  ctx.stroke();
+}
+
+// ── Component ────────────────────────────────────────────
 
 export default function ECGLine() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafRef = useRef<number>(0);
+  const startTimeRef = useRef<number>(0);
+  const gridCacheRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let baselineY = 0;
+    let yScale = 1;
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = canvas!.getBoundingClientRect();
+      w = rect.width * dpr;
+      h = rect.height * dpr;
+      canvas!.width = w;
+      canvas!.height = h;
+      baselineY = h * 0.52;
+      yScale = h / 280;
+
+      // Re-cache grid
+      const gridCanvas = document.createElement("canvas");
+      gridCanvas.width = w;
+      gridCanvas.height = h;
+      const gridCtx = gridCanvas.getContext("2d");
+      if (gridCtx) {
+        drawGrid(gridCtx, w, h, dpr);
+      }
+      gridCacheRef.current = gridCanvas;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    startTimeRef.current = performance.now();
+
+    function draw(now: number) {
+      const elapsed = (now - startTimeRef.current) / 1000;
+      const sweepX = (elapsed * SWEEP_SPEED * dpr) % w;
+
+      // Clear
+      ctx!.clearRect(0, 0, w, h);
+
+      // Radial vignette mask — fade grid at edges
+      const gradient = ctx!.createRadialGradient(
+        w * 0.5,
+        h * 0.4,
+        0,
+        w * 0.5,
+        h * 0.4,
+        w * 0.6,
+      );
+      gradient.addColorStop(0, "rgba(0,0,0,1)");
+      gradient.addColorStop(0.6, "rgba(0,0,0,0.7)");
+      gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+      ctx!.save();
+      ctx!.globalCompositeOperation = "source-over";
+
+      // Draw cached grid with vignette
+      if (gridCacheRef.current) {
+        ctx!.globalAlpha = 1;
+        ctx!.drawImage(gridCacheRef.current, 0, 0);
+
+        // Apply vignette as a destination-in mask
+        ctx!.globalCompositeOperation = "destination-in";
+        ctx!.fillStyle = gradient;
+        ctx!.fillRect(0, 0, w, h);
+      }
+
+      ctx!.restore();
+
+      // ── Draw waveform ───────────────────────────────────
+      // We draw the full width of the canvas as a repeating waveform,
+      // then apply brightness based on distance from the sweep head.
+
+      const beatWidthPx = BEAT_WIDTH * dpr;
+
+      for (let pass = 0; pass < 3; pass++) {
+        // pass 0: dim afterglow trace (full path behind head)
+        // pass 1: bright glowing trail
+        // pass 2: baseline reference line
+
+        ctx!.beginPath();
+
+        const step = pass === 2 ? 8 * dpr : 2 * dpr;
+
+        for (let px = 0; px < w; px += step) {
+          const xInBeat = px % beatWidthPx;
+          const sample = sampleBeat(xInBeat / dpr) * yScale;
+          const py = baselineY + sample;
+
+          // Distance from sweep head (wrapping)
+          let dist = sweepX - px;
+          if (dist < 0) dist += w;
+          const frac = dist / w;
+
+          let alpha = 0;
+
+          if (pass === 0) {
+            // Afterglow: everything behind the head, fading
+            if (frac < AFTERGLOW_LENGTH) {
+              alpha = 0.12 * (1 - frac / AFTERGLOW_LENGTH);
+            }
+          } else if (pass === 1) {
+            // Bright trail
+            if (frac < TRAIL_LENGTH) {
+              alpha = 1.0 * Math.pow(1 - frac / TRAIL_LENGTH, 2.2);
+            }
+          } else {
+            // Flat baseline
+            alpha = 0.08;
+          }
+
+          if (alpha < 0.005) continue;
+
+          if (pass === 2) {
+            // Baseline is just a horizontal line
+            if (px === 0) {
+              ctx!.moveTo(0, baselineY);
+            } else {
+              ctx!.lineTo(px, baselineY);
+            }
+          } else {
+            // Draw tiny segments with per-segment alpha
+            const nextPx = px + step;
+            const nextXInBeat = nextPx % beatWidthPx;
+            const nextSample = sampleBeat(nextXInBeat / dpr) * yScale;
+            const nextPy = baselineY + nextSample;
+
+            ctx!.strokeStyle = `rgba(${GLOW_COLOR}, ${alpha.toFixed(3)})`;
+            ctx!.lineWidth = pass === 1 ? 2.8 * dpr : 1.5 * dpr;
+            ctx!.beginPath();
+            ctx!.moveTo(px, py);
+            ctx!.lineTo(nextPx, nextPy);
+            ctx!.stroke();
+          }
+        }
+
+        if (pass === 2) {
+          ctx!.strokeStyle = `rgba(${GLOW_COLOR}, 0.08)`;
+          ctx!.lineWidth = 1 * dpr;
+          ctx!.stroke();
+        }
+      }
+
+      // ── Glow layer: re-draw bright section with shadow ──
+      {
+        ctx!.save();
+        ctx!.shadowColor = `rgba(${GLOW_COLOR}, 0.6)`;
+        ctx!.shadowBlur = 16 * dpr;
+        ctx!.lineWidth = 2.2 * dpr;
+
+        const glowTrail = w * 0.12; // only the very tip glows intensely
+        ctx!.beginPath();
+
+        for (let px = 0; px < w; px += 2 * dpr) {
+          let dist = sweepX - px;
+          if (dist < 0) dist += w;
+          if (dist > glowTrail) continue;
+
+          const xInBeat = px % beatWidthPx;
+          const sample = sampleBeat(xInBeat / dpr) * yScale;
+          const py = baselineY + sample;
+
+          const alpha = Math.pow(1 - dist / glowTrail, 1.8);
+          ctx!.strokeStyle = `rgba(${GLOW_COLOR}, ${alpha.toFixed(3)})`;
+          ctx!.beginPath();
+          ctx!.moveTo(px, py);
+
+          const nextPx = px + 2 * dpr;
+          const nextXInBeat = nextPx % beatWidthPx;
+          const nextSample = sampleBeat(nextXInBeat / dpr) * yScale;
+          ctx!.lineTo(nextPx, baselineY + nextSample);
+          ctx!.stroke();
+        }
+
+        ctx!.restore();
+      }
+
+      // ── Sweep head dot ──────────────────────────────────
+      {
+        const headXInBeat = sweepX % beatWidthPx;
+        const headSample = sampleBeat(headXInBeat / dpr) * yScale;
+        const headY = baselineY + headSample;
+        const r = HEAD_RADIUS * dpr;
+
+        // Outer glow
+        ctx!.save();
+        ctx!.shadowColor = `rgba(${GLOW_COLOR}, 0.9)`;
+        ctx!.shadowBlur = 24 * dpr;
+        ctx!.beginPath();
+        ctx!.arc(sweepX, headY, r * 1.8, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(${GLOW_COLOR}, 0.25)`;
+        ctx!.fill();
+        ctx!.restore();
+
+        // Inner bright dot
+        ctx!.beginPath();
+        ctx!.arc(sweepX, headY, r, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(${GLOW_COLOR}, 0.95)`;
+        ctx!.fill();
+
+        // White-hot center
+        ctx!.beginPath();
+        ctx!.arc(sweepX, headY, r * 0.4, 0, Math.PI * 2);
+        ctx!.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx!.fill();
+      }
+
+      // ── Dark wipe zone ahead of sweep ───────────────────
+      // Creates the classic "eraser" look ahead of the head
+      {
+        const wipeWidth = w * 0.06;
+        const wipeGrad = ctx!.createLinearGradient(
+          sweepX,
+          0,
+          sweepX + wipeWidth,
+          0,
+        );
+        wipeGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
+        wipeGrad.addColorStop(0.4, "rgba(0, 0, 0, 0.7)");
+        wipeGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx!.fillStyle = wipeGrad;
+        ctx!.fillRect(sweepX, 0, wipeWidth, h);
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    }
+
+    rafRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
-      {/* Subtle ECG monitor grid */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(0,255,136,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,136,0.10) 1px, transparent 1px)",
-          backgroundSize: "46px 46px",
-          maskImage:
-            "radial-gradient(circle at 50% 40%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 45%, rgba(0,0,0,0) 75%)",
-          WebkitMaskImage:
-            "radial-gradient(circle at 50% 40%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 45%, rgba(0,0,0,0) 75%)",
-        }}
-      />
-
-      {/* Monitor-style sweep: trace draws left -> right, then resets. */}
-      <motion.div className="absolute inset-y-0 left-0 w-full">
-        <svg
-          viewBox="0 0 1200 200"
-          className="h-full w-full"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <filter id="ecgGlow" x="-20%" y="-50%" width="140%" height="200%">
-              <feGaussianBlur stdDeviation="4.2" result="blur" />
-              <feColorMatrix
-                in="blur"
-                type="matrix"
-                values="
-                  0 0 0 0 0
-                  0 0 0 0 1
-                  0 0 0 0 0.62
-                  0 0 0 1 0"
-                result="greenGlow"
-              />
-              <feMerge>
-                <feMergeNode in="greenGlow" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-
-            {/* Sweep mask: sharp head + fading tail (like an actual monitor). */}
-            <linearGradient id="sweepGradient" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="65%" stopColor="rgba(255,255,255,0.00)" />
-              <stop offset="86%" stopColor="rgba(255,255,255,0.30)" />
-              <stop offset="94%" stopColor="rgba(255,255,255,0.95)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </linearGradient>
-
-            <mask id="sweepMask">
-              <rect x="0" y="0" width="1200" height="200" fill="black" />
-              <motion.rect
-                y="0"
-                width="520"
-                height="200"
-                fill="url(#sweepGradient)"
-                initial={{ x: -520 }}
-                animate={{ x: [-520, 1200] }}
-                transition={{ duration: 4.8, repeat: Infinity, ease: "linear" }}
-              />
-            </mask>
-          </defs>
-
-          <motion.g
-            // Subtle baseline drift so it feels “alive”
-            animate={{ y: [0, -1.2, 0.6, 0] }}
-            transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            {/* Baseline */}
-            <path
-              d="M0 100 L1200 100"
-              stroke="rgba(0,255,136,0.16)"
-              strokeWidth="2.4"
-              fill="none"
-            />
-
-            {/* Move the whole signal leftward continuously so spikes aren’t fixed in one place. */}
-            <motion.g
-              animate={{ x: [0, -1200] }}
-              transition={{ duration: 7.5, repeat: Infinity, ease: "linear" }}
-            >
-              {/* Faint “history” trace */}
-              <g>
-                <path
-                  d={WAVE_PATH}
-                  stroke="rgba(0,255,136,0.20)"
-                  strokeWidth="2.4"
-                  fill="none"
-                />
-                <path
-                  d={WAVE_PATH}
-                  transform="translate(1200 0)"
-                  stroke="rgba(0,255,136,0.20)"
-                  strokeWidth="2.4"
-                  fill="none"
-                />
-              </g>
-
-              {/* The “live” sweep (masked) */}
-              <motion.g mask="url(#sweepMask)">
-                <motion.path
-                  d={WAVE_PATH}
-                  stroke="#00ff88"
-                  strokeWidth="3.2"
-                  fill="none"
-                  filter="url(#ecgGlow)"
-                  initial={{ opacity: 0.9 }}
-                  animate={{ opacity: [0.85, 1, 0.88] }}
-                  transition={{
-                    duration: 2.8,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-                <motion.path
-                  d={WAVE_PATH}
-                  transform="translate(1200 0)"
-                  stroke="#00ff88"
-                  strokeWidth="3.2"
-                  fill="none"
-                  filter="url(#ecgGlow)"
-                  initial={{ opacity: 0.9 }}
-                  animate={{ opacity: [0.85, 1, 0.88] }}
-                  transition={{
-                    duration: 2.8,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-              </motion.g>
-            </motion.g>
-
-            {/* Pulse head (bright dot) moving left -> right */}
-            <motion.circle
-              r="4.2"
-              cy="100"
-              fill="#00ff88"
-              filter="url(#ecgGlow)"
-              initial={{ cx: -10, opacity: 0 }}
-              animate={{
-                cx: [-10, 1200],
-                opacity: [0, 1, 1, 0],
-                r: [3.4, 5.0, 3.6],
-              }}
-              transition={{
-                duration: 4.8,
-                repeat: Infinity,
-                ease: "linear",
-                times: [0, 0.06, 0.94, 1],
-              }}
-            />
-          </motion.g>
-        </svg>
-      </motion.div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="pointer-events-none absolute inset-0 h-full w-full opacity-50"
+      aria-hidden="true"
+    />
   );
 }
