@@ -124,7 +124,7 @@ export default function TimeSinceTimer() {
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       {/* Floating entries panel */}
-      <EntriesPanel />
+      {/* <EntriesPanel /> */}
 
       {/* Title row + audio */}
       <div className="flex items-center justify-between gap-4">
