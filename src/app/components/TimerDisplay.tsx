@@ -1,7 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { formatElapsed, pad2 } from "@/lib/utils";
 import type { ElapsedTime } from "@/types/timer";
 
@@ -18,7 +17,7 @@ type TimerDisplayProps = {
   onDismissError: () => void;
 };
 
-export default function TimerDisplay({
+export default memo(function TimerDisplay({
   startTime,
   now,
   formattedStart,
@@ -56,26 +55,10 @@ export default function TimerDisplay({
       </div>
 
       {/* Elapsed counter */}
-      <motion.div
-        className="relative rounded-2xl border border-emerald-400/15 bg-black/40 px-6 py-10 text-center shadow-[0_0_60px_rgba(0,255,136,0.10)]"
-        animate={{
-          boxShadow: [
-            "0 0 45px rgba(0,255,136,0.08)",
-            "0 0 70px rgba(0,255,136,0.16)",
-            "0 0 45px rgba(0,255,136,0.08)",
-          ],
-        }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      >
+      <div className="animate-glow-pulse relative rounded-2xl border border-emerald-400/15 bg-black/40 px-6 py-10 text-center">
         <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_40%,rgba(0,255,136,0.12),transparent_55%)]" />
 
-        <motion.div
-          className="relative font-mono text-3xl font-semibold tracking-tight text-white"
-          initial={{ scale: 0.98, opacity: 0 }}
-          animate={{ scale: [0.98, 1, 0.995], opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          key={`${elapsed.years}-${elapsed.months}-${elapsed.days}-${elapsed.hours}-${elapsed.minutes}-${elapsed.seconds}`}
-        >
+        <div className="relative font-mono text-3xl font-semibold tracking-tight text-white">
           {elapsed.years > 0 && (
             <>
               <span className="text-emerald-300">{elapsed.years}</span>
@@ -95,35 +78,31 @@ export default function TimerDisplay({
           <span>{pad2(elapsed.minutes)}</span>
           <span className="text-white/60">:</span>
           <span>{pad2(elapsed.seconds)}</span>
-        </motion.div>
+        </div>
 
         <div className="relative mt-4 text-xs uppercase tracking-[0.3em] text-white/55">
           Elapsed time
         </div>
-      </motion.div>
+      </div>
 
       {/* Stop / Resync controls */}
       <div className="flex flex-col gap-3 sm:flex-row">
         {!stopped ? (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={onStop}
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-red-300 transition hover:border-red-500/40 hover:text-red-200"
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-red-300 transition hover:scale-[1.02] hover:border-red-500/40 hover:text-red-200 active:scale-[0.98]"
           >
             Stop Timer
-          </motion.button>
+          </button>
         ) : (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             type="button"
             onClick={onResync}
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-black shadow-[0_0_24px_rgba(0,255,136,0.25)] transition hover:shadow-[0_0_34px_rgba(0,255,136,0.35)]"
+            className="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-black shadow-[0_0_24px_rgba(0,255,136,0.25)] transition hover:scale-[1.02] hover:shadow-[0_0_34px_rgba(0,255,136,0.35)] active:scale-[0.98]"
           >
             Resync
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -150,4 +129,4 @@ export default function TimerDisplay({
       )}
     </div>
   );
-}
+});

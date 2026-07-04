@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { isValidDatetimeLocal } from "@/lib/utils";
 import { fetchTimer, startTimer, resetTimer } from "@/lib/api/timer";
 import AudioPlayer from "./AudioPlayer";
-import EntriesPanel from "./EntriesPanel";
 import TimerDisplay from "./TimerDisplay";
 import TimerSetup from "./TimerSetup";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { formatPlayback } from "@/lib/utils";
 
 type AudioPlayerProps = {
@@ -8,7 +8,7 @@ type AudioPlayerProps = {
   onError?: (message: string) => void;
 };
 
-export default function AudioPlayer({ onError }: AudioPlayerProps) {
+export default memo(function AudioPlayer({ onError }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const rafRef = useRef<number>(0);
   const wasPlayingBeforeSeekRef = useRef(false);
@@ -79,9 +79,11 @@ export default function AudioPlayer({ onError }: AudioPlayerProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Smooth rAF-driven time sync ─────────────────────────
+  // ── Smooth rAF-driven time sync (only while playing) ───
 
   useEffect(() => {
+    if (!isPlaying && !isSeeking) return;
+
     const el = audioRef.current;
     if (!el) return;
 
@@ -92,7 +94,7 @@ export default function AudioPlayer({ onError }: AudioPlayerProps) {
 
     rafRef.current = requestAnimationFrame(update);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [isSeeking]);
+  }, [isPlaying, isSeeking]);
 
   // ── Handlers ────────────────────────────────────────────
 
@@ -208,4 +210,4 @@ export default function AudioPlayer({ onError }: AudioPlayerProps) {
       </div>
     </>
   );
-}
+});

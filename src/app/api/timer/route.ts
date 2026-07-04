@@ -8,7 +8,12 @@ export async function GET() {
     const doc = await Timer.findOne({}).sort({ createdAt: -1 }).lean();
     return NextResponse.json(
       { startTime: doc?.startTime ?? null },
-      { status: 200 },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+        },
+      },
     );
   } catch (err) {
     return NextResponse.json(
@@ -40,9 +45,8 @@ export async function POST(req: Request) {
 
     await connectMongo();
 
-    // Replace existing timer (single-row semantics).
-    await Timer.deleteMany({});
-    await Timer.create({ startTime });
+    // Atomic upsert — single-row semantics with one DB roundtrip.
+    await Timer.findOneAndUpdate({}, { startTime }, { upsert: true });
 
     return NextResponse.json({ startTime }, { status: 201 });
   } catch (err) {

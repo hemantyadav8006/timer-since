@@ -183,8 +183,27 @@ export default function ECGLine() {
 
     startTimeRef.current = performance.now();
 
+    // Pause animation when tab is hidden to save CPU/battery
+    let paused = false;
+    let pauseStart = 0;
+    let totalPaused = 0;
+
+    function onVisibilityChange() {
+      if (document.hidden) {
+        paused = true;
+        pauseStart = performance.now();
+        cancelAnimationFrame(rafRef.current);
+      } else {
+        totalPaused += performance.now() - pauseStart;
+        paused = false;
+        rafRef.current = requestAnimationFrame(draw);
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     function draw(now: number) {
-      const elapsed = (now - startTimeRef.current) / 1000;
+      const elapsed = (now - startTimeRef.current - totalPaused) / 1000;
       const sweepX = (elapsed * SWEEP_SPEED * dpr) % w;
 
       // Clear
@@ -382,6 +401,7 @@ export default function ECGLine() {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
 
