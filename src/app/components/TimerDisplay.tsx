@@ -11,6 +11,9 @@ type TimerDisplayProps = {
   formattedStart: string;
   onReset: () => void;
   isResetting: boolean;
+  stopped: boolean;
+  onStop: () => void;
+  onResync: () => void;
   error: string | null;
   onDismissError: () => void;
 };
@@ -21,6 +24,9 @@ export default function TimerDisplay({
   formattedStart,
   onReset,
   isResetting,
+  stopped,
+  onStop,
+  onResync,
   error,
   onDismissError,
 }: TimerDisplayProps) {
@@ -95,6 +101,38 @@ export default function TimerDisplay({
           Elapsed time
         </div>
       </motion.div>
+
+      {/* Stop / Resync controls */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        {!stopped ? (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={onStop}
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-red-300 transition hover:border-red-500/40 hover:text-red-200"
+          >
+            Stop Timer
+          </motion.button>
+        ) : (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={onResync}
+            className="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-black shadow-[0_0_24px_rgba(0,255,136,0.25)] transition hover:shadow-[0_0_34px_rgba(0,255,136,0.35)]"
+          >
+            Resync
+          </motion.button>
+        )}
+      </div>
+
+      {/* Stopped indicator */}
+      {stopped && (
+        <div className="text-center text-sm text-amber-300/80">
+          Timer paused — press Resync to resume
+        </div>
+      )}
 
       {/* Error display */}
       {error && (

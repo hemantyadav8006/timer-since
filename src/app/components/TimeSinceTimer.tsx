@@ -21,6 +21,9 @@ export default function TimeSinceTimer() {
   const [isStarting, setIsStarting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
+  // ── Stop/resync state ─────────────────────────────────
+  const [stopped, setStopped] = useState(false);
+
   // ── Load persisted timer on mount ───────────────────────
 
   useEffect(() => {
@@ -49,10 +52,10 @@ export default function TimeSinceTimer() {
   // ── Tick every second while running ─────────────────────
 
   useEffect(() => {
-    if (startTime == null) return;
+    if (startTime == null || stopped) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, [startTime]);
+  }, [startTime, stopped]);
 
   // ── Auto-dismiss errors after 5 seconds ─────────────────
 
@@ -90,6 +93,7 @@ export default function TimeSinceTimer() {
       const saved = await startTimer(ms);
       setStartTime(saved);
       setNow(Date.now());
+      setStopped(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start timer.");
     } finally {
@@ -110,6 +114,15 @@ export default function TimeSinceTimer() {
     } finally {
       setIsResetting(false);
     }
+  }, []);
+
+  const handleStop = useCallback(() => {
+    setStopped(true);
+  }, []);
+
+  const handleResync = useCallback(() => {
+    setNow(Date.now());
+    setStopped(false);
   }, []);
 
   const dismissError = useCallback(() => setError(null), []);
@@ -152,6 +165,9 @@ export default function TimeSinceTimer() {
             formattedStart={formattedStart}
             onReset={handleReset}
             isResetting={isResetting}
+            stopped={stopped}
+            onStop={handleStop}
+            onResync={handleResync}
             error={error}
             onDismissError={dismissError}
           />
