@@ -5,14 +5,19 @@ import { Entry } from "@/models/Entry";
 type EntryPayload = {
   when?: number;
   text?: string;
+  timerId?: string;
 };
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const timerId = searchParams.get("timerId");
+
     await connectMongo();
-    const entries = await Entry.find({})
+    const filter = timerId ? { timerId } : {};
+    const entries = await Entry.find(filter)
       .sort({ when: -1 })
-      .select("_id when text createdAt updatedAt")
+      .select("_id timerId when text createdAt updatedAt")
       .lean();
     return NextResponse.json({ entries }, { status: 200 });
   } catch {
@@ -28,6 +33,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as EntryPayload;
     const when = body.when;
     const text = body.text?.trim() ?? "";
+    const timerId = body.timerId ?? "";
 
     if (typeof when !== "number" || !Number.isFinite(when)) {
       return NextResponse.json(
@@ -36,16 +42,20 @@ export async function POST(req: Request) {
       );
     }
     if (!text) {
-      return NextResponse.json({ error: "Text is required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Text is required." },
+        { status: 400 },
+      );
     }
 
     await connectMongo();
-    const created = await Entry.create({ when, text });
+    const created = await Entry.create({ when, text, timerId });
 
     return NextResponse.json(
       {
         entry: {
           _id: created._id,
+          timerId: created.timerId,
           when: created.when,
           text: created.text,
           createdAt: created.createdAt,

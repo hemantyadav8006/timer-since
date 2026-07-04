@@ -1,97 +1,165 @@
 "use client";
 
-import { memo, useMemo } from "react";
-import { formatElapsed, pad2 } from "@/lib/utils";
-import type { ElapsedTime } from "@/types/timer";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { formatElapsed, formatCountdown, pad2 } from "@/lib/utils";
+import { isCountdownComplete } from "@/types/timer";
+import type { ElapsedTime, TimerItem } from "@/types/timer";
+import Confetti from "@/components/ui/Confetti";
 
 type TimerDisplayProps = {
-  startTime: number;
+  timer: TimerItem;
   now: number;
-  formattedStart: string;
-  onReset: () => void;
-  isResetting: boolean;
-  stopped: boolean;
   onStop: () => void;
   onResync: () => void;
-  error: string | null;
-  onDismissError: () => void;
+  onDelete: () => void;
+  onShare: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onToggleFavorite: () => void;
+  onTogglePin: () => void;
+  onArchive: () => void;
 };
 
 export default memo(function TimerDisplay({
-  startTime,
+  timer,
   now,
-  formattedStart,
-  onReset,
-  isResetting,
-  stopped,
   onStop,
   onResync,
-  error,
-  onDismissError,
+  onDelete,
+  onShare,
+  onEdit,
+  onDuplicate,
+  onToggleFavorite,
+  onTogglePin,
+  onArchive,
 }: TimerDisplayProps) {
-  const elapsed: ElapsedTime = useMemo(
-    () => formatElapsed(now - startTime),
-    [now, startTime],
+  const isCountdown = timer.mode === "countdown";
+  const done = isCountdownComplete(timer);
+  const prevDone = useRef(done);
+  const [celebrate, setCelebrate] = useState(false);
+
+  useEffect(() => {
+    if (done && !prevDone.current) {
+      setCelebrate(true);
+      setTimeout(() => setCelebrate(false), 4000);
+    }
+    prevDone.current = done;
+  }, [done]);
+
+  const elapsed: ElapsedTime = useMemo(() => {
+    if (isCountdown) {
+      const target = timer.targetDate ?? timer.startDate;
+      return formatCountdown(target);
+    }
+    return formatElapsed(now - timer.startDate);
+  }, [now, timer.startDate, timer.targetDate, isCountdown]);
+
+  const formattedDate = useMemo(
+    () => new Date(isCountdown ? (timer.targetDate ?? timer.startDate) : timer.startDate).toLocaleString(),
+    [timer.startDate, timer.targetDate, isCountdown],
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header: start time + reset */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-white/65">
-          Start: <span className="text-white/90">{formattedStart}</span>
+    <div className="space-y-5">
+      <Confetti active={celebrate} color={timer.color} />
+      {/* Header row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{timer.icon}</span>
+            <h2 className="truncate text-lg font-bold text-white/90">
+              {timer.title}
+            </h2>
+          </div>
+          {timer.description && (
+            <p className="mt-1 text-sm text-white/45">{timer.description}</p>
+          )}
+          <div className="mt-1 text-xs text-white/40">
+            {isCountdown ? "Target" : "Started"}: {formattedDate}
+          </div>
+          {timer.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {timer.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-white/50"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.98 }}
-          type="button"
-          onClick={onReset}
-          disabled={isResetting}
-          className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-sm font-semibold text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-50"
-        >
-          {isResetting ? "Resetting…" : "Reset"}
-        </motion.button> */}
-      </div>
-
-      {/* Elapsed counter */}
-      <div className="animate-glow-pulse relative rounded-2xl border border-emerald-400/15 bg-black/40 px-6 py-10 text-center">
-        <div className="absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_40%,rgba(0,255,136,0.12),transparent_55%)]" />
-
-        <div className="relative font-mono text-3xl font-semibold tracking-tight text-white">
-          {elapsed.years > 0 && (
-            <>
-              <span className="text-emerald-300">{elapsed.years}</span>
-              <span className="text-white/60 text-[0.6em]">years</span>{" "}
-            </>
-          )}
-          {(elapsed.years > 0 || elapsed.months > 0) && (
-            <>
-              <span className="text-emerald-300">{elapsed.months}</span>
-              <span className="text-white/60 text-[0.6em]">months</span>{" "}
-            </>
-          )}
-          <span className="text-emerald-300">{elapsed.days}</span>
-          <span className="text-white/60 text-[0.6em]">days</span>{" "}
-          <span>{pad2(elapsed.hours)}</span>
-          <span className="text-white/60">:</span>
-          <span>{pad2(elapsed.minutes)}</span>
-          <span className="text-white/60">:</span>
-          <span>{pad2(elapsed.seconds)}</span>
-        </div>
-
-        <div className="relative mt-4 text-xs uppercase tracking-[0.3em] text-white/55">
-          Elapsed time
+        {/* Action buttons */}
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" onClick={onToggleFavorite} title={timer.favorite ? "Unfavorite" : "Favorite"} className="rounded-lg border border-white/8 px-2 py-1.5 text-xs hover:bg-white/5">
+            {timer.favorite ? "⭐" : "☆"}
+          </button>
+          <button type="button" onClick={onTogglePin} title={timer.pinned ? "Unpin" : "Pin"} className="rounded-lg border border-white/8 px-2 py-1.5 text-xs hover:bg-white/5">
+            {timer.pinned ? "📌" : "📍"}
+          </button>
+          <button type="button" onClick={onEdit} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Edit</button>
+          <button type="button" onClick={onDuplicate} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Duplicate</button>
+          <button type="button" onClick={onShare} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Share</button>
+          <button type="button" onClick={onArchive} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Archive</button>
+          <button type="button" onClick={onDelete} className="rounded-lg border border-red-500/15 px-2.5 py-1.5 text-xs text-red-300/60 hover:text-red-200">Delete</button>
         </div>
       </div>
 
-      {/* Stop / Resync controls */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        {!stopped ? (
+      {/* Timer counter */}
+      <div
+        className="animate-glow-pulse relative rounded-2xl border bg-black/40 px-6 py-8 text-center sm:py-10"
+        style={{
+          borderColor: `${timer.color}15`,
+          boxShadow: `0 0 50px ${timer.color}08`,
+        }}
+      >
+        <div
+          className="absolute inset-0 rounded-2xl"
+          style={{ background: `radial-gradient(circle at 50% 40%, ${timer.color}10, transparent 55%)` }}
+        />
+
+        {done ? (
+          <div className="relative text-2xl font-bold" style={{ color: timer.color }}>
+            Countdown complete!
+          </div>
+        ) : (
+          <div className="relative font-mono text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+            {elapsed.years > 0 && (
+              <>
+                <span style={{ color: timer.color }}>{elapsed.years}</span>
+                <span className="text-white/50 text-[0.6em]">y </span>
+              </>
+            )}
+            {(elapsed.years > 0 || elapsed.months > 0) && (
+              <>
+                <span style={{ color: timer.color }}>{elapsed.months}</span>
+                <span className="text-white/50 text-[0.6em]">mo </span>
+              </>
+            )}
+            <span style={{ color: timer.color }}>{elapsed.days}</span>
+            <span className="text-white/50 text-[0.6em]">d </span>
+            <span>{pad2(elapsed.hours)}</span>
+            <span className="text-white/50">:</span>
+            <span>{pad2(elapsed.minutes)}</span>
+            <span className="text-white/50">:</span>
+            <span>{pad2(elapsed.seconds)}</span>
+          </div>
+        )}
+
+        <div className="relative mt-3 text-xs uppercase tracking-[0.3em] text-white/45">
+          {isCountdown ? "Remaining" : "Elapsed time"}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {!timer.stopped ? (
           <button
             type="button"
             onClick={onStop}
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-red-300 transition hover:scale-[1.02] hover:border-red-500/40 hover:text-red-200 active:scale-[0.98]"
+            className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-red-300 transition hover:border-red-500/40 active:scale-[0.98]"
           >
             Stop Timer
           </button>
@@ -99,32 +167,20 @@ export default memo(function TimerDisplay({
           <button
             type="button"
             onClick={onResync}
-            className="inline-flex flex-1 items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-black shadow-[0_0_24px_rgba(0,255,136,0.25)] transition hover:scale-[1.02] hover:shadow-[0_0_34px_rgba(0,255,136,0.35)] active:scale-[0.98]"
+            className="inline-flex flex-1 items-center justify-center rounded-xl px-5 py-3 font-semibold text-black transition active:scale-[0.98]"
+            style={{
+              backgroundColor: timer.color,
+              boxShadow: `0 0 24px ${timer.color}40`,
+            }}
           >
             Resync
           </button>
         )}
       </div>
 
-      {/* Stopped indicator */}
-      {stopped && (
+      {timer.stopped && (
         <div className="text-center text-sm text-amber-300/80">
           Timer paused — press Resync to resume
-        </div>
-      )}
-
-      {/* Error display */}
-      {error && (
-        <div className="flex items-center justify-between rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          <span>{error}</span>
-          <button
-            type="button"
-            onClick={onDismissError}
-            aria-label="Dismiss error"
-            className="ml-3 text-red-300 hover:text-white"
-          >
-            ✕
-          </button>
         </div>
       )}
     </div>

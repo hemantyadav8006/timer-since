@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ThemeProvider from "@/app/providers/ThemeProvider";
+import AuthProvider from "@/app/providers/AuthProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -9,7 +12,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Time Since",
-  description: "Persistent time-since timer stored in MongoDB.",
+  description: "Multi-purpose timer platform for 20+ use cases.",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -22,7 +30,18 @@ export default function RootLayout({
       lang="en"
       className={`${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="icon" href="/icon.svg" />
+      </head>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
