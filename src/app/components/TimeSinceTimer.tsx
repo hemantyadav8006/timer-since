@@ -68,7 +68,15 @@ export default function TimeSinceTimer() {
 
   const formattedStart = useMemo(() => {
     if (startTime == null) return "";
-    return new Date(startTime).toLocaleString();
+
+    return new Date(startTime).toLocaleString([], {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
   }, [startTime]);
 
   // ── Handlers ────────────────────────────────────────────
