@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { isValidDatetimeLocal } from "@/lib/utils";
-import { fetchTimer, startTimer, resetTimer } from "@/lib/api/timer";
+import { isValidDatetimeLocal, formatDate } from "@/lib/utils";
+import { fetchTimer, patchTimer, startTimer, resetTimer } from "@/lib/api/timer";
+import { isTimerStopped } from "@/types/timer";
 import AudioPlayer from "./AudioPlayer";
 import TimerDisplay from "./TimerDisplay";
 import TimerSetup from "./TimerSetup";
@@ -33,7 +34,16 @@ export default function TimeSinceTimer() {
         setLoading(true);
         setError(null);
         const saved = await fetchTimer();
-        if (!cancelled) setStartTime(saved);
+        if (!cancelled) {
+          setStartTime(saved.startTime);
+          const paused = isTimerStopped(saved.stopTimeAt, saved.resumedTimeAt);
+          setStopped(paused);
+          setNow(
+            paused && saved.stopTimeAt != null
+              ? saved.stopTimeAt
+              : Date.now(),
+          );
+        }
       } catch (e) {
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Failed to fetch timer.");
@@ -69,14 +79,7 @@ export default function TimeSinceTimer() {
   const formattedStart = useMemo(() => {
     if (startTime == null) return "";
 
-    return new Date(startTime).toLocaleString([], {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    return formatDate(new Date(startTime).toISOString());
   }, [startTime]);
 
   // ── Handlers ────────────────────────────────────────────
@@ -98,7 +101,7 @@ export default function TimeSinceTimer() {
     try {
       setIsStarting(true);
       const saved = await startTimer(ms);
-      setStartTime(saved);
+      setStartTime(saved.startTime);
       setNow(Date.now());
       setStopped(false);
     } catch (e) {
@@ -116,6 +119,7 @@ export default function TimeSinceTimer() {
       await resetTimer();
       setStartTime(null);
       setInputValue("");
+      setStopped(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to reset timer.");
     } finally {
@@ -123,13 +127,30 @@ export default function TimeSinceTimer() {
     }
   }, []);
 
-  const handleStop = useCallback(() => {
-    setStopped(true);
+  const handleStop = useCallback(async () => {
+    setError(null);
+    const stopTimeAt = Date.now();
+
+    try {
+      await patchTimer({ stopTimeAt });
+      setStopped(true);
+      setNow(stopTimeAt);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to stop timer.");
+    }
   }, []);
 
-  const handleResync = useCallback(() => {
-    setNow(Date.now());
-    setStopped(false);
+  const handleResync = useCallback(async () => {
+    setError(null);
+    const resumedTimeAt = Date.now();
+
+    try {
+      await patchTimer({ resumedTimeAt });
+      setNow(resumedTimeAt);
+      setStopped(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to resume timer.");
+    }
   }, []);
 
   const dismissError = useCallback(() => setError(null), []);

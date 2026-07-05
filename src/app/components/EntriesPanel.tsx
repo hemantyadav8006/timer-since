@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toDatetimeLocalValue } from "@/lib/utils";
+import { toDatetimeLocalValue, formatDate } from "@/lib/utils";
 import {
   fetchEntries,
   createEntry,
@@ -342,7 +342,7 @@ export default function EntriesPanel() {
                               </div>
                             ) : (
                               <div className="text-white/80">
-                                {new Date(entry.when).toLocaleString()}
+                                {formatDate(new Date(entry.when).toISOString())}
                               </div>
                             )}
                           </td>

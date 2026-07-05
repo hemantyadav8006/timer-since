@@ -12,11 +12,26 @@ export type EntryItem = {
   updatedAt?: string;
 };
 
+// ── Timer state ─────────────────────────────────────────
+
+export type TimerState = {
+  startTime: number | null;
+  stopTimeAt: number | null;
+  resumedTimeAt: number | null;
+};
+
+export function isTimerStopped(
+  stopTimeAt: number | null,
+  resumedTimeAt: number | null,
+): boolean {
+  if (stopTimeAt == null) return false;
+  if (resumedTimeAt == null) return true;
+  return stopTimeAt > resumedTimeAt;
+}
+
 // ── API response discriminated unions ───────────────────
 
-export type TimerApiResponse =
-  | { startTime: number | null }
-  | { error: string };
+export type TimerApiResponse = TimerState | { error: string };
 
 export type EntriesApiResponse =
   | { entries: EntryItem[] }

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { formatElapsed, pad2 } from "@/lib/utils";
+import { formatElapsed, formatDate, pad2 } from "@/lib/utils";
 import type { ElapsedTime } from "@/types/timer";
 
 type TimerDisplayProps = {
@@ -34,6 +34,12 @@ export default memo(function TimerDisplay({
     [now, startTime],
   );
 
+  const formattedStop = useMemo(() => {
+    if (!stopped) return "";
+
+    return formatDate(new Date(now).toISOString());
+  }, [stopped, now]);
+
   return (
     <div className="space-y-6">
       {/* Header: start time + reset */}
@@ -42,16 +48,14 @@ export default memo(function TimerDisplay({
           Start: <span className="text-white/90">{formattedStart}</span>
         </div>
 
-        {/* <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.98 }}
+        {/* <button
           type="button"
           onClick={onReset}
           disabled={isResetting}
           className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-black/40 px-4 py-2 text-sm font-semibold text-white/85 transition hover:border-white/25 hover:text-white disabled:opacity-50"
         >
           {isResetting ? "Resetting…" : "Reset"}
-        </motion.button> */}
+        </button> */}
       </div>
 
       {/* Elapsed counter */}
@@ -108,8 +112,11 @@ export default memo(function TimerDisplay({
 
       {/* Stopped indicator */}
       {stopped && (
-        <div className="text-center text-sm text-amber-300/80">
-          Timer paused — press Resync to resume
+        <div className="space-y-1 text-center text-sm text-amber-300/80">
+          <div>
+            Stopped: <span className="text-amber-200">{formattedStop}</span>
+          </div>
+          <div>Timer paused — press Resync to resume</div>
         </div>
       )}
 

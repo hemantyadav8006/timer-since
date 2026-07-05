@@ -30,6 +30,16 @@ export default async function connectMongo() {
     });
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  try {
+    cached.conn = await cached.promise;
+    console.log("Connected to MongoDB!");
+    return cached.conn;
+  } catch (err) {
+    cached.promise = null;
+    console.error(
+      "Failed to connect to MongoDB:",
+      err instanceof Error ? err.message : err,
+    );
+    throw err;
+  }
 }
