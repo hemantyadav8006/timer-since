@@ -1,10 +1,10 @@
 const JWT_SECRET = process.env.JWT_SECRET;
 
-if (!JWT_SECRET && process.env.WEBSITE_ENV === "prod") {
-  throw new Error("JWT_SECRET must be set in production.");
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is required.");
 }
 
-const SECRET = JWT_SECRET ?? "timer-dev-only-secret-not-for-production";
+const SECRET = JWT_SECRET;
 
 export const AUTH_COOKIE_NAME = "timer_session";
 
