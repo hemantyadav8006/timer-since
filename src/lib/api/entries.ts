@@ -4,6 +4,7 @@ import type {
   EntryApiResponse,
   DeleteApiResponse,
 } from "@/types/timer";
+import { assertSuccess } from "@/lib/api/http";
 
 export async function fetchEntries(timerId?: string): Promise<EntryItem[]> {
   const url = timerId
@@ -11,10 +12,8 @@ export async function fetchEntries(timerId?: string): Promise<EntryItem[]> {
     : "/api/entries";
   const res = await fetch(url, { cache: "no-store" });
   const data = (await res.json()) as EntriesApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to fetch entries.");
-  }
-  return data.entries;
+  assertSuccess(res, data, "Failed to fetch entries.");
+  return (data as { entries: EntryItem[] }).entries;
 }
 
 export async function createEntry(
@@ -28,10 +27,8 @@ export async function createEntry(
     body: JSON.stringify({ when, text, timerId }),
   });
   const data = (await res.json()) as EntryApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to add entry.");
-  }
-  return data.entry;
+  assertSuccess(res, data, "Failed to add entry.");
+  return (data as { entry: EntryItem }).entry;
 }
 
 export async function updateEntry(
@@ -45,16 +42,12 @@ export async function updateEntry(
     body: JSON.stringify({ when, text }),
   });
   const data = (await res.json()) as EntryApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to update entry.");
-  }
-  return data.entry;
+  assertSuccess(res, data, "Failed to update entry.");
+  return (data as { entry: EntryItem }).entry;
 }
 
 export async function deleteEntry(id: string): Promise<void> {
   const res = await fetch(`/api/entries/${id}`, { method: "DELETE" });
   const data = (await res.json()) as DeleteApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to delete entry.");
-  }
+  assertSuccess(res, data, "Failed to delete entry.");
 }

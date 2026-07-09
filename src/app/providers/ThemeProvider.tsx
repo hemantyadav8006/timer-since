@@ -11,6 +11,12 @@ import {
 import type { ThemeName, ThemeColors, ViewMode } from "@/types/timer";
 import { getTheme, THEME_NAMES } from "@/lib/themes";
 
+export type UserPreferences = {
+  theme: string;
+  language: string;
+  reducedMotion: boolean;
+};
+
 type ThemeContextValue = {
   themeName: ThemeName;
   theme: ThemeColors;
@@ -21,6 +27,7 @@ type ThemeContextValue = {
   setReducedMotion: (v: boolean) => void;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
+  applyUserPreferences: (prefs: UserPreferences) => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -33,6 +40,7 @@ const ThemeContext = createContext<ThemeContextValue>({
   setReducedMotion: () => {},
   viewMode: "grid",
   setViewMode: () => {},
+  applyUserPreferences: () => {},
 });
 
 export function useTheme() {
@@ -82,6 +90,16 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("timer_view", mode);
   }, []);
 
+  const applyUserPreferences = useCallback(
+    (prefs: UserPreferences) => {
+      const theme = prefs.theme as ThemeName;
+      if (THEME_NAMES.includes(theme)) setThemeName(theme);
+      if (prefs.language) setLanguage(prefs.language);
+      setReducedMotion(prefs.reducedMotion);
+    },
+    [setThemeName, setLanguage, setReducedMotion],
+  );
+
   const theme = getTheme(themeName);
 
   return (
@@ -96,6 +114,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
         setReducedMotion,
         viewMode,
         setViewMode,
+        applyUserPreferences,
       }}
     >
       {children}

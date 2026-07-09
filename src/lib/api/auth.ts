@@ -1,4 +1,5 @@
 import type { UserItem, UserApiResponse, AuthCheckResponse } from "@/types/timer";
+import { dispatchSessionExpired } from "@/lib/auth-events";
 
 export async function register(
   email: string,
@@ -40,6 +41,13 @@ export async function logout(): Promise<void> {
 export async function checkAuth(): Promise<UserItem | null> {
   try {
     const res = await fetch("/api/auth/me", { cache: "no-store" });
+    if (res.status === 401) {
+      const data = (await res.json()) as { error?: string };
+      if (data.error === "Session invalid.") {
+        dispatchSessionExpired();
+      }
+      return null;
+    }
     if (!res.ok) return null;
     const data = (await res.json()) as AuthCheckResponse;
     if ("error" in data) return null;

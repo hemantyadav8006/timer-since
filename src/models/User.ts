@@ -28,7 +28,7 @@ const UserSchema = new Schema<UserDoc>(
       type: {
         theme: {
           type: String,
-          enum: ["emerald", "rose", "amber", "blue", "purple", "warm"],
+          enum: ["emerald", "rose", "ocean", "purple", "amber", "monochrome"],
           default: "emerald",
         },
         language: { type: String, default: "en" },

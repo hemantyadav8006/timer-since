@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { User } from "@/models/User";
-import { getCurrentUserId } from "@/lib/auth";
+import { clearAuthCookie, getCurrentUserId } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -16,7 +16,8 @@ export async function GET() {
       .lean();
 
     if (!user) {
-      return NextResponse.json({ error: "User not found." }, { status: 404 });
+      await clearAuthCookie();
+      return NextResponse.json({ error: "Session invalid." }, { status: 401 });
     }
 
     return NextResponse.json({

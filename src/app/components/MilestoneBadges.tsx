@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { getMilestonesForTimer, evaluateMilestones } from "@/lib/milestones";
 import { formatDuration } from "@/lib/utils";
+import { notifyMilestoneAchieved } from "@/lib/notifications";
 import type { TimerItem } from "@/types/timer";
 
 type MilestoneBadgesProps = {
@@ -20,6 +21,21 @@ export default function MilestoneBadges({
     () => evaluateMilestones(milestones, elapsedMs),
     [milestones, elapsedMs],
   );
+
+  const prevAchievedCount = useRef(0);
+
+  useEffect(() => {
+    const achieved = statuses.filter((s) => s.achieved);
+    if (achieved.length > prevAchievedCount.current) {
+      const newest = achieved[achieved.length - 1];
+      notifyMilestoneAchieved(
+        timer.title,
+        newest.milestone.label,
+        newest.milestone.icon,
+      );
+    }
+    prevAchievedCount.current = achieved.length;
+  }, [statuses, timer.title]);
 
   if (statuses.length === 0) return null;
 

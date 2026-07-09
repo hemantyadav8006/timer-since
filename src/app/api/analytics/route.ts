@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { Timer } from "@/models/Timer";
 import { Entry } from "@/models/Entry";
-import { getCurrentUserId } from "@/lib/auth";
+import { requireAuth } from "@/lib/api/middleware";
 
 export async function GET() {
   try {
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+
     await connectMongo();
-    const userId = await getCurrentUserId();
-    const filter = userId ? { userId } : {};
+    const filter = { userId: auth.userId };
 
     const timers = await Timer.find(filter).lean();
     const now = Date.now();

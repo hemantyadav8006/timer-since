@@ -2,24 +2,24 @@ import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { Timer } from "@/models/Timer";
 import { Entry } from "@/models/Entry";
-import { getCurrentUserId } from "@/lib/auth";
 import { timersToCSV } from "@/lib/utils";
+import { requireAuth } from "@/lib/api/middleware";
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+
     const { searchParams } = new URL(req.url);
     const format = searchParams.get("format") ?? "json";
 
     await connectMongo();
-    const userId = await getCurrentUserId();
-    const filter = userId ? { userId } : {};
+    const filter = { userId: auth.userId };
 
     const timers = await Timer.find(filter).sort({ createdAt: -1 }).lean();
-    const entries = await Entry.find(
-      userId
-        ? { timerId: { $in: timers.map((t) => t._id.toString()) } }
-        : {},
-    )
+    const entries = await Entry.find({
+      timerId: { $in: timers.map((t) => t._id.toString()) },
+    })
       .sort({ when: -1 })
       .lean();
 

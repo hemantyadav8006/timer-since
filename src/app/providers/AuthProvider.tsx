@@ -8,8 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { UserItem } from "@/types/timer";
 import * as authApi from "@/lib/api/auth";
+import { AUTH_SESSION_EXPIRED_EVENT } from "@/lib/auth-events";
+import { LOGIN_PATH } from "@/lib/auth-routes";
+import { useTheme } from "@/app/providers/ThemeProvider";
+import { registerNotificationServiceWorker } from "@/lib/notifications";
 
 type AuthContextValue = {
   user: UserItem | null;
@@ -32,33 +37,63 @@ export function useAuth() {
 }
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { applyUserPreferences } = useTheme();
   const [user, setUser] = useState<UserItem | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    authApi
-      .checkAuth()
-      .then(setUser)
-      .finally(() => setLoading(false));
+  const clearSession = useCallback(() => {
+    setUser(null);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const u = await authApi.login(email, password);
-    setUser(u);
-  }, []);
+  const applyUser = useCallback(
+    (u: UserItem | null) => {
+      setUser(u);
+      if (u?.preferences) applyUserPreferences(u.preferences);
+    },
+    [applyUserPreferences],
+  );
+
+  useEffect(() => {
+    registerNotificationServiceWorker();
+    authApi
+      .checkAuth()
+      .then(applyUser)
+      .finally(() => setLoading(false));
+  }, [applyUser]);
+
+  useEffect(() => {
+    function onSessionExpired() {
+      clearSession();
+      router.replace(LOGIN_PATH);
+    }
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () =>
+      window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, [clearSession, router]);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const u = await authApi.login(email, password);
+      applyUser(u);
+    },
+    [applyUser],
+  );
 
   const register = useCallback(
     async (email: string, password: string, name: string) => {
       const u = await authApi.register(email, password, name);
-      setUser(u);
+      applyUser(u);
     },
-    [],
+    [applyUser],
   );
 
   const logout = useCallback(async () => {
     await authApi.logout();
-    setUser(null);
-  }, []);
+    clearSession();
+    router.replace(LOGIN_PATH);
+  }, [clearSession, router]);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>

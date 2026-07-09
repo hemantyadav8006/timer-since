@@ -7,7 +7,6 @@ import { SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import type { ThemeName, ViewMode } from "@/types/timer";
 
 type HeaderProps = {
-  onAuthClick: () => void;
   onSearch: (query: string) => void;
   searchQuery: string;
 };
@@ -18,11 +17,7 @@ const VIEW_MODES: { mode: ViewMode; label: string; icon: string }[] = [
   { mode: "compact", label: "Compact", icon: "▤" },
 ];
 
-export default function Header({
-  onAuthClick,
-  onSearch,
-  searchQuery,
-}: HeaderProps) {
+export default function Header({ onSearch, searchQuery }: HeaderProps) {
   const { user, logout } = useAuth();
   const {
     themeName,
@@ -38,7 +33,6 @@ export default function Header({
 
   return (
     <header className="relative z-20 flex flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
-      {/* Logo */}
       <h1
         className="mr-auto text-lg font-bold tracking-wider"
         style={{ color: theme.primary }}
@@ -46,7 +40,6 @@ export default function Header({
         Time Since
       </h1>
 
-      {/* Search */}
       <div className="order-last w-full sm:order-0 sm:w-auto">
         <input
           type="search"
@@ -58,7 +51,6 @@ export default function Header({
         />
       </div>
 
-      {/* View mode */}
       <div className="flex overflow-hidden rounded-lg border border-white/10">
         {VIEW_MODES.map((vm) => (
           <button
@@ -73,7 +65,6 @@ export default function Header({
         ))}
       </div>
 
-      {/* Theme */}
       <div className="flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1.5">
         {THEME_NAMES.map((tn) => (
           <button
@@ -87,7 +78,6 @@ export default function Header({
         ))}
       </div>
 
-      {/* Language */}
       <select
         value={language}
         onChange={(e) => setLanguage(e.target.value)}
@@ -101,7 +91,6 @@ export default function Header({
         ))}
       </select>
 
-      {/* Reduced motion */}
       <button
         type="button"
         onClick={() => setReducedMotion(!reducedMotion)}
@@ -112,28 +101,16 @@ export default function Header({
         {reducedMotion ? "⏸" : "▶"}
       </button>
 
-      {/* Auth */}
-      {user ? (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/50">{user.name}</span>
-          <button
-            type="button"
-            onClick={logout}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/55 hover:text-white"
-          >
-            Log Out
-          </button>
-        </div>
-      ) : (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-white/50">{user?.name}</span>
         <button
           type="button"
-          onClick={onAuthClick}
-          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-black transition"
-          style={{ backgroundColor: theme.primary }}
+          onClick={logout}
+          className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-white/55 hover:text-white"
         >
-          Log In
+          Log Out
         </button>
-      )}
+      </div>
     </header>
   );
 }

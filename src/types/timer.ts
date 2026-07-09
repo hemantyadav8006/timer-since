@@ -186,7 +186,7 @@ export type TimersApiResponse = { timers: TimerItem[] } | { error: string };
 export type EntriesApiResponse = { entries: EntryItem[] } | { error: string };
 export type EntryApiResponse = { entry: EntryItem } | { error: string };
 export type DeleteApiResponse = { ok: true } | { error: string };
-export type UserApiResponse = { user: UserItem; token: string } | { error: string };
+export type UserApiResponse = { user: UserItem } | { error: string };
 export type AuthCheckResponse = { user: UserItem } | { error: string };
 
 // ── Theme colors ────────────────────────────────────────
@@ -204,16 +204,24 @@ export type ThemeColors = {
 
 // ── Utility: compute elapsed ms from a timer ────────────
 
-export function computeElapsedMs(timer: TimerItem, now: number): number {
-  if (timer.mode === "countdown") {
-    const target = timer.targetDate ?? timer.startDate;
-    return Math.max(0, target - now);
-  }
-  return Math.max(0, now - timer.startDate);
+/** Wall-clock time used for display when a timer may be paused. */
+export function getEffectiveNow(timer: TimerItem, now: number): number {
+  if (timer.stopped && timer.stoppedAt != null) return timer.stoppedAt;
+  return now;
 }
 
-export function isCountdownComplete(timer: TimerItem): boolean {
+export function computeElapsedMs(timer: TimerItem, now: number): number {
+  const effectiveNow = getEffectiveNow(timer, now);
+  if (timer.mode === "countdown") {
+    const target = timer.targetDate ?? timer.startDate;
+    return Math.max(0, target - effectiveNow);
+  }
+  return Math.max(0, effectiveNow - timer.startDate);
+}
+
+export function isCountdownComplete(timer: TimerItem, now = Date.now()): boolean {
   if (timer.mode !== "countdown") return false;
+  const effectiveNow = getEffectiveNow(timer, now);
   const target = timer.targetDate ?? timer.startDate;
-  return target <= Date.now();
+  return target <= effectiveNow;
 }

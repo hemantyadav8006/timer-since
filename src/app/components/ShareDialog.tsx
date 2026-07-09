@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { updateTimer } from "@/lib/api/timers";
+import { useToast } from "@/components/ui/Toast";
 import ModalBackdrop from "@/components/ui/ModalBackdrop";
 import type { TimerItem } from "@/types/timer";
 
@@ -15,6 +16,7 @@ type ShareDialogProps = {
 
 export default function ShareDialog({ open, onClose, timer, onTimerUpdated }: ShareDialogProps) {
   const { theme } = useTheme();
+  const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [toggling, setToggling] = useState(false);
 
@@ -28,8 +30,9 @@ export default function ShareDialog({ open, onClose, timer, onTimerUpdated }: Sh
     try {
       const updated = await updateTimer(timer._id, { isPublic: !timer.isPublic });
       onTimerUpdated(updated);
-    } catch { /* silent */ }
-    finally { setToggling(false); }
+    } catch {
+      toast("Failed to update sharing settings.", "error");
+    } finally { setToggling(false); }
   }
 
   function copyLink() {

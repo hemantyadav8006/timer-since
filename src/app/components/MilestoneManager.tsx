@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { updateTimer } from "@/lib/api/timers";
 import { formatDuration } from "@/lib/utils";
@@ -37,6 +37,12 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
   const [newIcon, setNewIcon] = useState("⭐");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setMilestones(timer.milestoneConfig.customMilestones);
+    setError(null);
+  }, [open, timer._id, timer.milestoneConfig.customMilestones]);
 
   function addPreset(d: { label: string; ms: number }) {
     if (milestones.some((m) => m.durationMs === d.ms)) return;

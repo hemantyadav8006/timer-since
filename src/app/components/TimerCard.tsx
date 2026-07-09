@@ -2,7 +2,7 @@
 
 import { memo, useMemo } from "react";
 import { formatElapsed, formatCountdown, pad2 } from "@/lib/utils";
-import { computeElapsedMs, isCountdownComplete } from "@/types/timer";
+import { getEffectiveNow, isCountdownComplete } from "@/types/timer";
 import type { TimerItem, ElapsedTime } from "@/types/timer";
 import { useTimerTick } from "@/hooks/useTimerTick";
 
@@ -27,16 +27,17 @@ export default memo(function TimerCard({
   variant = "grid",
 }: TimerCardProps) {
   const now = useTimerTick(timer.stopped);
+  const effectiveNow = getEffectiveNow(timer, now);
 
   const elapsed: ElapsedTime = useMemo(() => {
     if (timer.mode === "countdown") {
       const target = timer.targetDate ?? timer.startDate;
-      return formatCountdown(target);
+      return formatCountdown(target, effectiveNow);
     }
-    return formatElapsed(now - timer.startDate);
-  }, [now, timer.startDate, timer.targetDate, timer.mode]);
+    return formatElapsed(effectiveNow - timer.startDate);
+  }, [effectiveNow, timer.startDate, timer.targetDate, timer.mode]);
 
-  const done = isCountdownComplete(timer);
+  const done = isCountdownComplete(timer, now);
   const timeStr = formatTimeString(elapsed);
 
   // ── Compact variant ───────────────────────────────────

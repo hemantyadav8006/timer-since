@@ -1,18 +1,31 @@
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { Timer } from "@/models/Timer";
-import { getCurrentUserId } from "@/lib/auth";
 import { generateShareId } from "@/lib/utils";
+import { escapeRegex } from "@/lib/utils";
+import { requireAuth } from "@/lib/api/middleware";
+import { validateTimerFields } from "@/lib/api/timer-validation";
 
 const ALLOWED_SORT: Record<string, Record<string, 1 | -1>> = {
   newest: { createdAt: -1 },
   oldest: { createdAt: 1 },
   alphabetical: { title: 1 },
   "recently-updated": { updatedAt: -1 },
+  "favorites-first": { favorite: -1, createdAt: -1 },
+  "pinned-first": { pinned: -1, createdAt: -1 },
 };
+
+function buildSort(sort: string): Record<string, 1 | -1> {
+  const base = ALLOWED_SORT[sort] ?? ALLOWED_SORT.newest;
+  if (sort === "pinned-first" || sort === "favorites-first") return base;
+  return { pinned: -1, ...base };
+}
 
 export async function GET(req: Request) {
   try {
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+
     const { searchParams } = new URL(req.url);
     const archived = searchParams.get("archived") === "true";
     const category = searchParams.get("category");
@@ -26,27 +39,29 @@ export async function GET(req: Request) {
     const skip = Math.max(Number(searchParams.get("skip")) || 0, 0);
 
     await connectMongo();
-    const userId = await getCurrentUserId();
+    const { userId } = auth;
 
-    const filter: Record<string, unknown> = { archived };
-    if (userId) filter.userId = userId;
+    const filter: Record<string, unknown> = { archived, userId };
     if (category) filter.category = category;
     if (tag) filter.tags = tag;
     if (favorite === "true") filter.favorite = true;
     if (pinned === "true") filter.pinned = true;
     if (mode === "elapsed" || mode === "countdown") filter.mode = mode;
     if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: "i" } },
-        { description: { $regex: search, $options: "i" } },
-        { tags: { $regex: search, $options: "i" } },
-      ];
+      const safe = escapeRegex(search.trim());
+      if (safe) {
+        filter.$or = [
+          { title: { $regex: safe, $options: "i" } },
+          { description: { $regex: safe, $options: "i" } },
+          { tags: { $regex: safe, $options: "i" } },
+        ];
+      }
     }
 
-    const sortObj = ALLOWED_SORT[sort] ?? ALLOWED_SORT.newest;
+    const sortObj = buildSort(sort);
 
     const timers = await Timer.find(filter)
-      .sort({ pinned: -1, ...sortObj })
+      .sort(sortObj)
       .skip(skip)
       .limit(limit)
       .lean();
@@ -64,7 +79,13 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+
     const body = await req.json();
+    const validationError = validateTimerFields(body, { isCreate: true });
+    if (validationError) return validationError;
+
     const {
       title,
       description = "",
@@ -79,50 +100,8 @@ export async function POST(req: Request) {
       milestoneConfig,
     } = body;
 
-    if (!title || typeof title !== "string" || title.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Timer title is required." },
-        { status: 400 },
-      );
-    }
-    if (title.trim().length > 120) {
-      return NextResponse.json(
-        { error: "Title must be 120 characters or fewer." },
-        { status: 400 },
-      );
-    }
-
-    if (mode === "elapsed") {
-      if (typeof startDate !== "number" || !Number.isFinite(startDate)) {
-        return NextResponse.json(
-          { error: "Start date is required for elapsed timers." },
-          { status: 400 },
-        );
-      }
-      if (startDate > Date.now() + 60_000) {
-        return NextResponse.json(
-          { error: "Elapsed timer start date cannot be in the future." },
-          { status: 400 },
-        );
-      }
-    } else if (mode === "countdown") {
-      const target = targetDate ?? startDate;
-      if (typeof target !== "number" || !Number.isFinite(target)) {
-        return NextResponse.json(
-          { error: "Target date is required for countdown timers." },
-          { status: 400 },
-        );
-      }
-      if (target <= Date.now()) {
-        return NextResponse.json(
-          { error: "Countdown target must be in the future." },
-          { status: 400 },
-        );
-      }
-    }
-
     await connectMongo();
-    const userId = (await getCurrentUserId()) ?? "";
+    const { userId } = auth;
 
     const timer = await Timer.create({
       title: title.trim(),

@@ -76,12 +76,17 @@ export function formatElapsed(ms: number): ElapsedTime {
   return { years, months, days, hours, minutes, seconds };
 }
 
+/** Escape special regex characters for safe MongoDB $regex use. */
+export function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Format remaining time for countdown timers.
- * Identical to formatElapsed but takes a target timestamp.
+ * Pass `now` for consistent display when paused or tick-synced.
  */
-export function formatCountdown(targetTime: number): ElapsedTime {
-  const remaining = targetTime - Date.now();
+export function formatCountdown(targetTime: number, now = Date.now()): ElapsedTime {
+  const remaining = targetTime - now;
   if (remaining <= 0) {
     return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
   }
@@ -107,9 +112,9 @@ export function toDatetimeLocalValue(epochMs: number): string {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
-/** Generate a unique share ID. */
+/** Generate a unique share ID (full UUID, no hyphens). */
 export function generateShareId(): string {
-  return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  return crypto.randomUUID().replace(/-/g, "");
 }
 
 /** Format a duration in ms to a human-readable string. */

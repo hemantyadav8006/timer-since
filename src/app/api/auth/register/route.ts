@@ -51,7 +51,6 @@ export async function POST(req: Request) {
           name: user.name,
           preferences: user.preferences,
         },
-        token,
       },
       { status: 201 },
     );

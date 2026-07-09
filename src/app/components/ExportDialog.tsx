@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useToast } from "@/components/ui/Toast";
+import { handleAuthFailure } from "@/lib/api/http";
 import ModalBackdrop from "@/components/ui/ModalBackdrop";
 
 type ExportDialogProps = { open: boolean; onClose: () => void };
@@ -16,6 +17,7 @@ export default function ExportDialog({ open, onClose }: ExportDialogProps) {
     setExporting(true);
     try {
       const res = await fetch(`/api/export?format=${format}`);
+      handleAuthFailure(res);
       if (!res.ok) throw new Error();
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

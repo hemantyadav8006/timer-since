@@ -2,8 +2,9 @@
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { formatElapsed, formatCountdown, pad2 } from "@/lib/utils";
-import { isCountdownComplete } from "@/types/timer";
+import { getEffectiveNow, isCountdownComplete } from "@/types/timer";
 import type { ElapsedTime, TimerItem } from "@/types/timer";
+import { notifyCountdownComplete } from "@/lib/notifications";
 import Confetti from "@/components/ui/Confetti";
 
 type TimerDisplayProps = {
@@ -34,25 +35,27 @@ export default memo(function TimerDisplay({
   onArchive,
 }: TimerDisplayProps) {
   const isCountdown = timer.mode === "countdown";
-  const done = isCountdownComplete(timer);
+  const effectiveNow = getEffectiveNow(timer, now);
+  const done = isCountdownComplete(timer, now);
   const prevDone = useRef(done);
   const [celebrate, setCelebrate] = useState(false);
 
   useEffect(() => {
     if (done && !prevDone.current) {
       setCelebrate(true);
+      notifyCountdownComplete(timer.title, timer.icon);
       setTimeout(() => setCelebrate(false), 4000);
     }
     prevDone.current = done;
-  }, [done]);
+  }, [done, timer.title, timer.icon]);
 
   const elapsed: ElapsedTime = useMemo(() => {
     if (isCountdown) {
       const target = timer.targetDate ?? timer.startDate;
-      return formatCountdown(target);
+      return formatCountdown(target, effectiveNow);
     }
-    return formatElapsed(now - timer.startDate);
-  }, [now, timer.startDate, timer.targetDate, isCountdown]);
+    return formatElapsed(effectiveNow - timer.startDate);
+  }, [effectiveNow, timer.startDate, timer.targetDate, isCountdown]);
 
   const formattedDate = useMemo(
     () => new Date(isCountdown ? (timer.targetDate ?? timer.startDate) : timer.startDate).toLocaleString(),

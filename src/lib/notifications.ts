@@ -4,19 +4,40 @@
 
 let swRegistration: ServiceWorkerRegistration | null = null;
 
-export async function initNotifications(): Promise<boolean> {
+/** Register the service worker without prompting for permission. */
+export async function registerNotificationServiceWorker(): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  if (!("Notification" in window) || !("serviceWorker" in navigator)) return false;
+  if (!("serviceWorker" in navigator)) return false;
 
   try {
-    const perm = await Notification.requestPermission();
-    if (perm !== "granted") return false;
-
     swRegistration = await navigator.serviceWorker.register("/sw.js");
     return true;
   } catch {
     return false;
   }
+}
+
+/** Request notification permission — call only from explicit user action. */
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") {
+    await registerNotificationServiceWorker();
+    return true;
+  }
+  if (Notification.permission === "denied") return false;
+
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") return false;
+  return registerNotificationServiceWorker();
+}
+
+export function canSendNotifications(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "Notification" in window &&
+    Notification.permission === "granted"
+  );
 }
 
 export type NotifyOptions = {
@@ -29,7 +50,7 @@ export type NotifyOptions = {
 };
 
 export function sendNotification(opts: NotifyOptions): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || !canSendNotifications()) return;
 
   if (swRegistration) {
     swRegistration.showNotification(opts.title, {
@@ -38,7 +59,7 @@ export function sendNotification(opts: NotifyOptions): void {
       tag: opts.tag,
       requireInteraction: opts.requireInteraction ?? false,
     });
-  } else if ("Notification" in window && Notification.permission === "granted") {
+  } else {
     new Notification(opts.title, {
       body: opts.body,
       icon: opts.icon ?? "/icon.svg",

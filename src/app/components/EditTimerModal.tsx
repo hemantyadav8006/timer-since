@@ -90,6 +90,15 @@ export default function EditTimerModal({
       .map((t) => t.trim())
       .filter(Boolean);
 
+    if (timer!.mode === "elapsed" && ms > Date.now() + 60_000) {
+      setError("Elapsed timer start date cannot be in the future.");
+      return;
+    }
+    if (timer!.mode === "countdown" && ms <= Date.now()) {
+      setError("Countdown target must be in the future.");
+      return;
+    }
+
     const updates: UpdateTimerPayload = {
       title: title.trim(),
       description: description.trim(),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -10,7 +10,7 @@ import {
   updateTimer,
   duplicateTimer,
 } from "@/lib/api/timers";
-import { initNotifications } from "@/lib/notifications";
+import { isSessionExpiredError } from "@/lib/api/http";
 import { useToast } from "@/components/ui/Toast";
 import type { TimerItem, SortOption, UpdateTimerPayload } from "@/types/timer";
 import EmptyState from "@/components/ui/EmptyState";
@@ -22,7 +22,6 @@ import TimerCard from "./TimerCard";
 import TimerFocusView from "./TimerFocusView";
 import CreateTimerModal from "./CreateTimerModal";
 import EditTimerModal from "./EditTimerModal";
-import AuthModal from "./AuthModal";
 import ExportDialog from "./ExportDialog";
 import ShareDialog from "./ShareDialog";
 import BreathingExercise from "./BreathingExercise";
@@ -51,7 +50,6 @@ export default function Dashboard() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editTimer, setEditTimer] = useState<TimerItem | null>(null);
-  const [authOpen, setAuthOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [breathingOpen, setBreathingOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -60,6 +58,7 @@ export default function Dashboard() {
   const [deleting, setDeleting] = useState(false);
   const [confettiActive, setConfettiActive] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const loadRequestRef = useRef(0);
 
   // ── Keyboard shortcut: Ctrl+K for search ──────────────
   useEffect(() => {
@@ -77,6 +76,7 @@ export default function Dashboard() {
 
   // ── Fetch timers ──────────────────────────────────────
   const loadTimers = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     try {
       const { timers: data, total: t } = await fetchTimers({
         archived: showArchived,
@@ -86,12 +86,18 @@ export default function Dashboard() {
         sort: sortBy,
         q: debouncedSearch || undefined,
       });
+      if (requestId !== loadRequestRef.current) return;
       setTimers(data);
       setTotal(t);
-    } catch {
-      toast("Failed to load timers.", "error");
+    } catch (err) {
+      if (requestId !== loadRequestRef.current) return;
+      if (!isSessionExpiredError(err)) {
+        toast("Failed to load timers.", "error");
+      }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) {
+        setLoading(false);
+      }
     }
   }, [
     showArchived,
@@ -107,10 +113,6 @@ export default function Dashboard() {
     setLoading(true);
     loadTimers();
   }, [loadTimers]);
-
-  useEffect(() => {
-    initNotifications();
-  }, []);
 
   // ── Derived ───────────────────────────────────────────
   const selectedTimer = useMemo(
@@ -133,6 +135,8 @@ export default function Dashboard() {
       setTimers((prev) => [timer, ...prev]);
       setTotal((t) => t + 1);
       toast("Timer created!", "success");
+      setConfettiActive(true);
+      setTimeout(() => setConfettiActive(false), 4000);
     },
     [toast],
   );
@@ -142,12 +146,16 @@ export default function Dashboard() {
   }, []);
 
   const quickUpdate = useCallback(
-    async (id: string, updates: UpdateTimerPayload) => {
+    async (id: string, updates: UpdateTimerPayload): Promise<boolean> => {
       try {
         const updated = await updateTimer(id, updates);
         handleUpdated(updated);
-      } catch {
-        toast("Failed to update timer.", "error");
+        return true;
+      } catch (err) {
+        if (!isSessionExpiredError(err)) {
+          toast("Failed to update timer.", "error");
+        }
+        return false;
       }
     },
     [handleUpdated, toast],
@@ -187,7 +195,8 @@ export default function Dashboard() {
 
   const handleArchive = useCallback(
     async (timer: TimerItem) => {
-      await quickUpdate(timer._id, { archived: !timer.archived });
+      const ok = await quickUpdate(timer._id, { archived: !timer.archived });
+      if (!ok) return;
       if (!showArchived && !timer.archived) {
         setTimers((prev) => prev.filter((t) => t._id !== timer._id));
         setTotal((t) => t - 1);
@@ -197,27 +206,48 @@ export default function Dashboard() {
     [quickUpdate, showArchived, toast],
   );
 
+  const handleStop = useCallback(
+    (timer: TimerItem) => {
+      const now = Date.now();
+      const segmentStart =
+        timer.streaks.length > 0
+          ? timer.streaks[timer.streaks.length - 1].endTime
+          : timer.startDate;
+      void quickUpdate(timer._id, {
+        stopped: true,
+        stoppedAt: now,
+        streaks: [
+          ...timer.streaks,
+          { startTime: segmentStart, endTime: now, duration: now - segmentStart },
+        ],
+      });
+    },
+    [quickUpdate],
+  );
+
+  const handleResync = useCallback(
+    (timer: TimerItem) => {
+      const stoppedAt = timer.stoppedAt ?? Date.now();
+      const pauseMs = Date.now() - stoppedAt;
+      void quickUpdate(timer._id, {
+        stopped: false,
+        stoppedAt: null,
+        startDate: timer.startDate + pauseMs,
+      });
+    },
+    [quickUpdate],
+  );
+
   // ── Focus view ────────────────────────────────────────
   if (selectedTimer) {
     return (
       <>
-        <Header
-          onAuthClick={() => setAuthOpen(true)}
-          onSearch={setSearchQuery}
-          searchQuery={searchQuery}
-        />
+        <Header onSearch={setSearchQuery} searchQuery={searchQuery} />
         <TimerFocusView
           timer={selectedTimer}
           onBack={() => setSelectedId(null)}
-          onStop={() =>
-            quickUpdate(selectedTimer._id, {
-              stopped: true,
-              stoppedAt: Date.now(),
-            })
-          }
-          onResync={() =>
-            quickUpdate(selectedTimer._id, { stopped: false, stoppedAt: null })
-          }
+          onStop={() => handleStop(selectedTimer)}
+          onResync={() => handleResync(selectedTimer)}
           onDelete={() => setDeleteConfirm(selectedTimer)}
           onShare={() => {
             setShareTimer(selectedTimer);
@@ -261,19 +291,14 @@ export default function Dashboard() {
           destructive
           loading={deleting}
         />
-        <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       </>
     );
   }
 
-  // ── Focus view ────────────────────────────────────────
+  // ── Dashboard view ────────────────────────────────────
   return (
     <>
-      <Header
-        onAuthClick={() => setAuthOpen(true)}
-        onSearch={setSearchQuery}
-        searchQuery={searchQuery}
-      />
+      <Header onSearch={setSearchQuery} searchQuery={searchQuery} />
 
       <div className="relative z-10 flex-1 px-4 pb-8 sm:px-6">
         {/* Quick stats bar */}
@@ -420,7 +445,6 @@ export default function Dashboard() {
         onClose={() => setCreateOpen(false)}
         onCreated={handleCreated}
       />
-      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
       <ExportDialog open={exportOpen} onClose={() => setExportOpen(false)} />
       <BreathingExercise
         open={breathingOpen}

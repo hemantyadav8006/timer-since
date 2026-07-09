@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { formatDuration } from "@/lib/utils";
+import { handleAuthFailure } from "@/lib/api/http";
 import ModalBackdrop from "@/components/ui/ModalBackdrop";
 
 type AnalyticsData = {
@@ -98,6 +99,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
     setError(null);
     try {
       const res = await fetch("/api/analytics");
+      handleAuthFailure(res);
       if (!res.ok) throw new Error();
       setData(await res.json());
     } catch {

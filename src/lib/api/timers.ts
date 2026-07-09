@@ -7,6 +7,8 @@ import type {
   UpdateTimerPayload,
   SortOption,
 } from "@/types/timer";
+import type { PublicTimerDto } from "@/lib/api/public-timer";
+import { assertSuccess } from "@/lib/api/http";
 
 type FetchTimersParams = {
   archived?: boolean;
@@ -37,20 +39,17 @@ export async function fetchTimers(
   if (params.skip) sp.set("skip", String(params.skip));
 
   const res = await fetch(`/api/timers?${sp.toString()}`, { cache: "no-store" });
-  const data = await res.json();
-  if (!res.ok || "error" in data) {
-    throw new Error(data.error ?? "Failed to fetch timers.");
-  }
-  return { timers: data.timers, total: data.total ?? data.timers.length };
+  const data = (await res.json()) as TimersApiResponse;
+  assertSuccess(res, data, "Failed to fetch timers.");
+  const success = data as { timers: TimerItem[]; total?: number };
+  return { timers: success.timers, total: success.total ?? success.timers.length };
 }
 
 export async function fetchTimer(id: string): Promise<TimerItem> {
   const res = await fetch(`/api/timers/${id}`, { cache: "no-store" });
   const data = (await res.json()) as TimerApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to fetch timer.");
-  }
-  return data.timer;
+  assertSuccess(res, data, "Failed to fetch timer.");
+  return (data as { timer: TimerItem }).timer;
 }
 
 export async function createTimer(payload: CreateTimerPayload): Promise<TimerItem> {
@@ -60,10 +59,8 @@ export async function createTimer(payload: CreateTimerPayload): Promise<TimerIte
     body: JSON.stringify(payload),
   });
   const data = (await res.json()) as TimerApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to create timer.");
-  }
-  return data.timer;
+  assertSuccess(res, data, "Failed to create timer.");
+  return (data as { timer: TimerItem }).timer;
 }
 
 export async function updateTimer(
@@ -76,18 +73,49 @@ export async function updateTimer(
     body: JSON.stringify(updates),
   });
   const data = (await res.json()) as TimerApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to update timer.");
-  }
-  return data.timer;
+  assertSuccess(res, data, "Failed to update timer.");
+  return (data as { timer: TimerItem }).timer;
 }
 
 export async function deleteTimer(id: string): Promise<void> {
   const res = await fetch(`/api/timers/${id}`, { method: "DELETE" });
   const data = (await res.json()) as DeleteApiResponse;
+  assertSuccess(res, data, "Failed to delete timer.");
+}
+
+function mapSharedTimer(dto: PublicTimerDto): TimerItem {
+  return {
+    _id: dto.shareId,
+    title: dto.title,
+    description: dto.description,
+    icon: dto.icon,
+    color: dto.color,
+    category: dto.category,
+    tags: [],
+    mode: dto.mode,
+    startDate: dto.startDate,
+    targetDate: dto.targetDate,
+    archived: false,
+    favorite: false,
+    pinned: false,
+    shareId: dto.shareId,
+    isPublic: true,
+    userId: "",
+    stopped: dto.stopped,
+    stoppedAt: dto.stoppedAt,
+    streaks: [],
+    milestoneConfig: dto.milestoneConfig,
+    sound: "none",
+  };
+}
+
+export async function fetchSharedTimer(shareId: string): Promise<TimerItem> {
+  const res = await fetch(`/api/share/${shareId}`, { cache: "no-store" });
+  const data = (await res.json()) as { timer: PublicTimerDto } | { error: string };
   if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Failed to delete timer.");
+    throw new Error("error" in data ? data.error : "Timer not found.");
   }
+  return mapSharedTimer(data.timer);
 }
 
 export async function duplicateTimer(timer: TimerItem): Promise<TimerItem> {
@@ -104,13 +132,4 @@ export async function duplicateTimer(timer: TimerItem): Promise<TimerItem> {
     sound: timer.sound,
     milestoneConfig: timer.milestoneConfig,
   });
-}
-
-export async function fetchSharedTimer(shareId: string): Promise<TimerItem> {
-  const res = await fetch(`/api/share/${shareId}`, { cache: "no-store" });
-  const data = (await res.json()) as TimerApiResponse;
-  if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Timer not found.");
-  }
-  return data.timer;
 }
