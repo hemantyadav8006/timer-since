@@ -1,7 +1,3 @@
-/**
- * Notification engine supporting browser notifications, sound, and badge updates.
- */
-
 let swRegistration: ServiceWorkerRegistration | null = null;
 
 /** Register the service worker without prompting for permission. */

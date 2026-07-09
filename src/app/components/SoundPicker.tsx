@@ -2,23 +2,12 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { formatPlayback } from "@/lib/utils";
+import { SOUND_MAP } from "@/lib/sounds";
 import type { SoundName } from "@/types/timer";
 
 type SoundPickerProps = {
   sound: SoundName;
   color: string;
-};
-
-const SOUND_MAP: Record<
-  SoundName,
-  { label: string; src: string | null; icon: string }
-> = {
-  heartbeat: { label: "Heartbeat", src: "/heartbeat.mp3", icon: "💓" },
-  rain: { label: "Rain", src: null, icon: "🌧️" },
-  bowls: { label: "Singing Bowls", src: null, icon: "🔔" },
-  nature: { label: "Nature", src: null, icon: "🌿" },
-  chime: { label: "Chime", src: null, icon: "🎵" },
-  none: { label: "No Sound", src: null, icon: "🔇" },
 };
 
 export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
@@ -41,6 +30,8 @@ export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
     }
   }, [sound]);
 
@@ -58,14 +49,6 @@ export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
   }, [isPlaying]);
 
   if (sound === "none" || !config.src) {
-    if (sound !== "none") {
-      return (
-        <div className="flex items-center gap-2 rounded-xl border border-app-border bg-app-surface px-3 py-2 text-xs text-app-muted">
-          <span>{config.icon}</span>
-          <span>{config.label} (coming soon)</span>
-        </div>
-      );
-    }
     return null;
   }
 
@@ -92,6 +75,7 @@ export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
       <audio
         ref={audioRef}
         src={config.src}
+        loop={config.loop}
         preload="metadata"
         onLoadedMetadata={(e) =>
           setDuration((e.target as HTMLAudioElement).duration)
@@ -101,14 +85,14 @@ export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
       <button
         type="button"
         onClick={togglePlayback}
-        className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition"
+        className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition hover:bg-app-surface-strong"
         style={{ borderColor: `${color}35`, color }}
         aria-label={isPlaying ? "Pause" : "Play"}
       >
         <span
           className={`h-2 w-2 rounded-full ${isPlaying ? "shadow-[0_0_8px]" : "opacity-40"}`}
           style={{
-            backgroundColor: isPlaying ? color : "white",
+            backgroundColor: isPlaying ? color : "currentColor",
             boxShadow: isPlaying ? `0 0 8px ${color}` : undefined,
           }}
         />
