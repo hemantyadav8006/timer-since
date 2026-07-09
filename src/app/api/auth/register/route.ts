@@ -2,7 +2,29 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import connectMongo from "@/lib/mongodb";
 import { User } from "@/models/User";
-import { createToken, setAuthCookie } from "@/lib/auth";
+import { createAndStoreCode, canResendCode } from "@/lib/auth-codes";
+import { sendVerificationCode } from "@/lib/email";
+
+export const runtime = "nodejs";
+
+async function sendVerificationEmail(
+  email: string,
+  name: string,
+): Promise<NextResponse | null> {
+  const resend = await canResendCode(email, "email_verification");
+  if (!resend.allowed) {
+    return NextResponse.json(
+      {
+        error: `Please wait ${resend.retryAfterSeconds}s before requesting a new code.`,
+      },
+      { status: 429 },
+    );
+  }
+
+  const code = await createAndStoreCode(email, "email_verification");
+  await sendVerificationCode(email, code, name);
+  return null;
+}
 
 export async function POST(req: Request) {
   try {
@@ -24,37 +46,51 @@ export async function POST(req: Request) {
 
     await connectMongo();
 
-    const existing = await User.findOne({ email: email.toLowerCase() }).lean();
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = await User.findOne({ email: normalizedEmail });
+
     if (existing) {
-      return NextResponse.json(
-        { error: "An account with this email already exists." },
-        { status: 409 },
+      if (existing.emailVerified) {
+        return NextResponse.json(
+          { error: "An account with this email already exists." },
+          { status: 409 },
+        );
+      }
+
+      existing.passwordHash = await bcrypt.hash(password, 12);
+      existing.name = name.trim();
+      await existing.save();
+
+      const emailError = await sendVerificationEmail(
+        normalizedEmail,
+        existing.name,
       );
+      if (emailError) return emailError;
+
+      return NextResponse.json({
+        needsVerification: true,
+        email: normalizedEmail,
+      });
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
-      email: email.toLowerCase().trim(),
+      email: normalizedEmail,
       passwordHash,
       name: name.trim(),
+      emailVerified: false,
       preferences: { theme: "emerald", language: "en", reducedMotion: false },
     });
 
-    const token = await createToken(user._id.toString(), user.email);
-    await setAuthCookie(token);
+    const emailError = await sendVerificationEmail(normalizedEmail, user.name);
+    if (emailError) return emailError;
 
     return NextResponse.json(
-      {
-        user: {
-          _id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          preferences: user.preferences,
-        },
-      },
+      { needsVerification: true, email: normalizedEmail },
       { status: 201 },
     );
-  } catch {
+  } catch (err) {
+    console.error("Register error:", err);
     return NextResponse.json(
       { error: "Failed to register." },
       { status: 500 },

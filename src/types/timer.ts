@@ -188,6 +188,18 @@ export type EntryApiResponse = { entry: EntryItem } | { error: string };
 export type DeleteApiResponse = { ok: true } | { error: string };
 export type UserApiResponse = { user: UserItem } | { error: string };
 export type AuthCheckResponse = { user: UserItem } | { error: string };
+export type RegisterApiResponse =
+  | { needsVerification: true; email: string }
+  | { user: UserItem }
+  | { error: string };
+export type LoginApiResponse =
+  | { user: UserItem }
+  | { error: string; code?: string; email?: string };
+export type VerifyEmailApiResponse = { user: UserItem } | { error: string; attemptsLeft?: number };
+export type MessageApiResponse = { ok: true; message: string } | { error: string };
+export type ResetPasswordApiResponse =
+  | { ok: true; message: string }
+  | { error: string; attemptsLeft?: number };
 
 // ── Theme colors ────────────────────────────────────────
 

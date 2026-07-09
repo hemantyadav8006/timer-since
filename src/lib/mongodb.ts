@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { migrateExistingUsersVerified } from "@/lib/migrations/verify-existing-users";
 
 declare global {
   var __mongooseConn:
@@ -49,6 +50,7 @@ export default async function connectMongo() {
 
   try {
     cached.conn = await cached.promise;
+    await migrateExistingUsersVerified();
     return cached.conn;
   } catch (err) {
     cached.promise = null;

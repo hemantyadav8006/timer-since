@@ -4,6 +4,7 @@ export type UserDoc = {
   email: string;
   passwordHash: string;
   name: string;
+  emailVerified: boolean;
   preferences: {
     theme: string;
     language: string;
@@ -24,6 +25,7 @@ const UserSchema = new Schema<UserDoc>(
     },
     passwordHash: { type: String, required: true },
     name: { type: String, required: true, trim: true, maxlength: 60 },
+    emailVerified: { type: Boolean, default: false },
     preferences: {
       type: {
         theme: {

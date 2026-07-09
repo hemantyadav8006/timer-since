@@ -40,6 +40,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const authPages = ["/verify-email", "/forgot-password", "/reset-password"];
+  if (authPages.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return NextResponse.next();
+  }
+
   if (!isPublicPage(pathname) && !authed) {
     const loginUrl = new URL(LOGIN_PATH, request.url);
     loginUrl.searchParams.set("from", pathname);

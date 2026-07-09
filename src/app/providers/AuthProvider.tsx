@@ -20,7 +20,12 @@ type AuthContextValue = {
   user: UserItem | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<authApi.RegisterResult>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -28,7 +33,8 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
   login: async () => {},
-  register: async () => {},
+  register: async () => ({ type: "needsVerification", email: "" }),
+  verifyEmail: async () => {},
   logout: async () => {},
 });
 
@@ -83,7 +89,18 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (email: string, password: string, name: string) => {
-      const u = await authApi.register(email, password, name);
+      const result = await authApi.register(email, password, name);
+      if (result.type === "verified") {
+        applyUser(result.user);
+      }
+      return result;
+    },
+    [applyUser],
+  );
+
+  const verifyEmail = useCallback(
+    async (email: string, code: string) => {
+      const u = await authApi.verifyEmail(email, code);
       applyUser(u);
     },
     [applyUser],
@@ -96,7 +113,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   }, [clearSession, router]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, verifyEmail, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

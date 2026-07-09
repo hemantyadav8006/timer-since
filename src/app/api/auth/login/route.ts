@@ -33,6 +33,17 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        {
+          error: "Email not verified.",
+          code: "EMAIL_NOT_VERIFIED",
+          email: user.email,
+        },
+        { status: 403 },
+      );
+    }
+
     const token = await createToken(user._id.toString(), user.email);
     await setAuthCookie(token);
 

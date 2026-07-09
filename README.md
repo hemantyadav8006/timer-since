@@ -25,6 +25,9 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 |-------|--------|-------------|
 | `/` | Public | Redirects to `/login` or `/dashboard` |
 | `/login` | Public | Sign in / sign up |
+| `/verify-email` | Public | Email verification after signup |
+| `/forgot-password` | Public | Request password reset code |
+| `/reset-password` | Public | Enter code and set new password |
 | `/dashboard` | Protected | Main timer dashboard |
 | `/share/[shareId]` | Public | Read-only shared timer view |
 
@@ -56,6 +59,13 @@ MONGODB_DB_NAME_DEV=timer-dev
 
 # Required in production (WEBSITE_ENV=prod)
 # JWT_SECRET=your-long-random-secret
+
+# Email (Gmail SMTP) — required for signup verification & password reset
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your@gmail.com
+EMAIL_PASS=your-gmail-app-password
+EMAIL_FROM=your@gmail.com
 ```
 
 | Variable | Required | Description |
@@ -66,6 +76,11 @@ MONGODB_DB_NAME_DEV=timer-dev
 | `MONGODB_URI` | Prod | MongoDB connection string for production |
 | `MONGODB_DB_NAME` | Prod | Database name for production |
 | `JWT_SECRET` | Prod | Secret for signing session tokens |
+| `EMAIL_HOST` | Yes | SMTP host (e.g. `smtp.gmail.com`) |
+| `EMAIL_PORT` | Yes | SMTP port (587 for TLS) |
+| `EMAIL_USER` | Yes | Gmail address |
+| `EMAIL_PASS` | Yes | Gmail app password (spaces are stripped automatically) |
+| `EMAIL_FROM` | Yes | Sender address shown in emails |
 
 ### 3. Run the dev server
 
@@ -115,7 +130,10 @@ src/
 ## Auth Flow
 
 1. Unauthenticated users are redirected to `/login` by middleware and client-side route guards.
-2. Login/register sets an httpOnly `timer_session` cookie (30-day expiry).
-3. On page load, `AuthProvider` validates the session via `GET /api/auth/me`.
-4. Logout or session expiry clears the cookie and redirects to `/login`.
-5. Timer data is scoped per user — all CRUD operations enforce ownership server-side.
+2. **Signup** creates an account and emails a 6-digit verification code. Users verify at `/verify-email` before accessing the app.
+3. **Login** requires a verified email. Unverified users are redirected to `/verify-email`.
+4. **Forgot password** sends a reset code via email; users set a new password at `/reset-password`.
+5. Login/register (after verification) sets an httpOnly `timer_session` cookie (30-day expiry).
+6. On page load, `AuthProvider` validates the session via `GET /api/auth/me`.
+7. Logout or session expiry clears the cookie and redirects to `/login`.
+8. Timer data is scoped per user — all CRUD operations enforce ownership server-side.

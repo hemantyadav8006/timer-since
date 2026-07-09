@@ -1,7 +1,13 @@
 export const LOGIN_PATH = "/login";
 export const DASHBOARD_PATH = "/dashboard";
 
-export const PUBLIC_PAGE_PREFIXES = [LOGIN_PATH, "/share"];
+export const PUBLIC_PAGE_PREFIXES = [
+  LOGIN_PATH,
+  "/verify-email",
+  "/forgot-password",
+  "/reset-password",
+  "/share",
+];
 
 export const PUBLIC_API_PREFIXES = [
   "/api/auth/login",

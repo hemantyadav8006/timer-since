@@ -1,12 +1,12 @@
-import LoginForm from "@/components/auth/LoginForm";
+import VerifyEmailForm from "@/components/auth/VerifyEmailForm";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { PublicRoute } from "@/components/auth/AuthGate";
 
-export default function LoginPage() {
+export default function VerifyEmailPage() {
   return (
     <PublicRoute>
       <AuthLayout>
-        <LoginForm />
+        <VerifyEmailForm />
       </AuthLayout>
     </PublicRoute>
   );
