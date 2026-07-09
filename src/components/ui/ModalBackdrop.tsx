@@ -7,14 +7,9 @@ type ModalBackdropProps = {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
-  /** Max width class. Defaults to "max-w-lg". */
   maxWidth?: string;
 };
 
-/**
- * Reusable modal wrapper with animated backdrop, click-outside-to-close,
- * Escape key handling, and scroll lock.
- */
 export default function ModalBackdrop({
   open,
   onClose,
@@ -44,18 +39,18 @@ export default function ModalBackdrop({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-(--app-overlay) p-0 backdrop-blur-sm sm:items-center sm:p-4"
           onClick={onClose}
           role="dialog"
           aria-modal="true"
         >
           <motion.div
-            initial={{ scale: 0.96, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.96, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.96, opacity: 0, y: 16 }}
             transition={{ duration: 0.15 }}
             onClick={(e) => e.stopPropagation()}
-            className={`max-h-[85vh] w-full overflow-y-auto rounded-2xl border border-white/10 bg-[#0a0a0a]/95 p-6 shadow-2xl backdrop-blur-md ${maxWidth}`}
+            className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-app-border bg-(--app-modal-bg) p-5 shadow-2xl backdrop-blur-md sm:max-h-[85vh] sm:rounded-2xl sm:p-6 ${maxWidth}`}
           >
             {children}
           </motion.div>

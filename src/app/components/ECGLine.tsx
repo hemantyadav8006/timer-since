@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "@/app/providers/ThemeProvider";
 
 /* ──────────────────────────────────────────────────────────
  *  ECGLine — hospital-monitor style background with 3 stacked
@@ -119,6 +120,15 @@ const samplePleth = buildWaveSampler(PLETH_POINTS, PLETH_WIDTH);
 
 const SWEEP_SPEED = 120; // pixels per second
 const GLOW_COLOR = "0, 255, 136";
+
+function getEcgWipeColors(): { mid: string; clear: string } {
+  const root = getComputedStyle(document.documentElement);
+  return {
+    mid: root.getPropertyValue("--ecg-wipe-mid").trim() || "rgba(0, 0, 0, 0.7)",
+    clear:
+      root.getPropertyValue("--ecg-wipe-clear").trim() || "rgba(0, 0, 0, 0)",
+  };
+}
 const HEAD_RADIUS = 3;
 const TRAIL_LENGTH = 0.55;
 const AFTERGLOW_LENGTH = 0.85;
@@ -282,6 +292,7 @@ function drawTrace(
 // ── Component ────────────────────────────────────────────
 
 export default function ECGLine() {
+  const { colorMode } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -415,19 +426,19 @@ export default function ECGLine() {
         );
       });
 
-      // ── Dark wipe zone ahead of sweep ───────────────────
-      // Creates the classic "eraser" look ahead of the head
-      {
+      // ── Wipe zone ahead of sweep (dark mode only — eraser on monitor) ──
+      if (document.documentElement.classList.contains("dark")) {
         const wipeWidth = w * 0.06;
+        const { mid: wipeMid, clear: wipeClear } = getEcgWipeColors();
         const wipeGrad = ctx!.createLinearGradient(
           sweepX,
           0,
           sweepX + wipeWidth,
           0,
         );
-        wipeGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
-        wipeGrad.addColorStop(0.4, "rgba(0, 0, 0, 0.7)");
-        wipeGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        wipeGrad.addColorStop(0, wipeClear);
+        wipeGrad.addColorStop(0.4, wipeMid);
+        wipeGrad.addColorStop(1, wipeClear);
         ctx!.fillStyle = wipeGrad;
         ctx!.fillRect(sweepX, 0, wipeWidth, h);
       }
@@ -442,12 +453,13 @@ export default function ECGLine() {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [colorMode]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none absolute inset-0 h-full w-full opacity-55"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      style={{ opacity: "var(--ecg-opacity)" }}
       aria-hidden="true"
     />
   );

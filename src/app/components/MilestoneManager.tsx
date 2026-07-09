@@ -96,11 +96,11 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
 
   return (
     <ModalBackdrop open={open} onClose={onClose}>
-      <h2 className="mb-4 text-lg font-bold text-white/90">Manage Milestones</h2>
+      <h2 className="mb-4 text-lg font-bold text-app-fg">Manage Milestones</h2>
 
       {/* Quick add presets */}
       <div className="mb-4">
-        <div className="mb-1.5 text-xs text-white/45">Quick Add Preset</div>
+        <div className="mb-1.5 text-xs text-app-muted">Quick Add Preset</div>
         <div className="flex flex-wrap gap-1.5">
           {PRESET_DURATIONS.map((d) => (
             <button
@@ -108,7 +108,7 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
               type="button"
               onClick={() => addPreset(d)}
               disabled={milestones.some((m) => m.durationMs === d.ms)}
-              className="rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-white/60 transition hover:bg-white/5 disabled:opacity-30"
+              className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted transition hover:bg-app-surface-strong disabled:opacity-30"
             >
               {d.label}
             </button>
@@ -117,15 +117,15 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
       </div>
 
       {/* Custom milestone form */}
-      <div className="mb-4 space-y-2 rounded-xl border border-white/8 bg-white/3 p-3">
-        <div className="text-xs font-medium text-white/50">Add Custom Milestone</div>
+      <div className="mb-4 space-y-2 rounded-xl border border-app-border bg-app-surface p-3">
+        <div className="text-xs font-medium text-app-muted">Add Custom Milestone</div>
         <div className="flex gap-2">
-          <input type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label" maxLength={50} className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/60 px-3 py-2 text-xs text-white outline-none" />
-          <input type="number" value={newDays} onChange={(e) => setNewDays(e.target.value)} placeholder="Days" min={0} className="w-16 rounded-lg border border-white/10 bg-black/60 px-2 py-2 text-xs text-white outline-none" />
-          <input type="number" value={newHours} onChange={(e) => setNewHours(e.target.value)} placeholder="Hrs" min={0} className="w-14 rounded-lg border border-white/10 bg-black/60 px-2 py-2 text-xs text-white outline-none" />
+          <input type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label" maxLength={50} className="min-w-0 flex-1 rounded-lg border border-app-border bg-app-input px-3 py-2 text-xs text-app-fg outline-none" />
+          <input type="number" value={newDays} onChange={(e) => setNewDays(e.target.value)} placeholder="Days" min={0} className="w-16 rounded-lg border border-app-border bg-app-input px-2 py-2 text-xs text-app-fg outline-none" />
+          <input type="number" value={newHours} onChange={(e) => setNewHours(e.target.value)} placeholder="Hrs" min={0} className="w-14 rounded-lg border border-app-border bg-app-input px-2 py-2 text-xs text-app-fg outline-none" />
         </div>
         <div className="flex items-center gap-2">
-          <div className="text-[10px] text-white/40">Icon:</div>
+          <div className="text-[10px] text-app-muted">Icon:</div>
           {PRESET_ICONS.map((icon) => (
             <button key={icon} type="button" onClick={() => setNewIcon(icon)} className={`text-sm ${newIcon === icon ? "scale-125" : "opacity-50"}`}>{icon}</button>
           ))}
@@ -138,15 +138,15 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
       {/* Current milestones list */}
       <div className="mb-4 max-h-60 overflow-y-auto">
         {milestones.length === 0 ? (
-          <div className="py-6 text-center text-xs text-white/35">No custom milestones. Default milestones will be used.</div>
+          <div className="py-6 text-center text-xs text-app-muted">No custom milestones. Default milestones will be used.</div>
         ) : (
           <div className="space-y-1.5">
             {milestones.map((m, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-3 py-2 text-xs">
+              <div key={i} className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs">
                 <span>{m.icon}</span>
-                <span className="flex-1 text-white/70">{m.label}</span>
-                <span className="text-white/40">{formatDuration(m.durationMs)}</span>
-                <button type="button" onClick={() => remove(i)} className="text-red-300/60 hover:text-red-200">✕</button>
+                <span className="flex-1 text-app-fg">{m.label}</span>
+                <span className="text-app-muted">{formatDuration(m.durationMs)}</span>
+                <button type="button" onClick={() => remove(i)} className="text-app-danger hover:text-app-danger-hover">✕</button>
               </div>
             ))}
           </div>
@@ -159,7 +159,7 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
         <button type="button" onClick={save} disabled={saving} className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-black disabled:opacity-50" style={{ backgroundColor: theme.primary }}>
           {saving ? "Saving..." : "Save Milestones"}
         </button>
-        <button type="button" onClick={onClose} className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/50 hover:text-white">Cancel</button>
+        <button type="button" onClick={onClose} className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg">Cancel</button>
       </div>
     </ModalBackdrop>
   );

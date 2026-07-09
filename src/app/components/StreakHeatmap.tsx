@@ -39,32 +39,32 @@ export default function StreakHeatmap({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-white/45">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-app-muted">
         Streaks
       </h3>
       <div className="flex gap-4 text-xs">
         <div>
-          <div className="text-white/45">Current</div>
+          <div className="text-app-muted">Current</div>
           <div className="font-semibold" style={{ color }}>{formatDuration(currentStreakMs)}</div>
         </div>
         <div>
-          <div className="text-white/45">Best</div>
+          <div className="text-app-muted">Best</div>
           <div className="font-semibold" style={{ color }}>{formatDuration(bestStreak)}</div>
         </div>
         <div>
-          <div className="text-white/45">Total Resets</div>
-          <div className="font-semibold text-white/70">{streaks.length}</div>
+          <div className="text-app-muted">Total Resets</div>
+          <div className="font-semibold text-app-fg">{streaks.length}</div>
         </div>
       </div>
-      <div className="rounded-xl border border-white/8 bg-white/3 p-3">
-        <div className="mb-1 text-[10px] text-white/35">Last 12 weeks</div>
+      <div className="rounded-xl border border-app-border bg-app-surface p-3">
+        <div className="mb-1 text-[10px] text-app-muted">Last 12 weeks</div>
         <div className="grid grid-cols-[repeat(12,1fr)] gap-[3px]">
           {heatmapData.map((day, i) => (
             <div
               key={i}
               title={`${day.date}: ${day.active ? "Active" : "Inactive"}`}
               className="aspect-square rounded-[2px]"
-              style={{ backgroundColor: day.active ? `${color}70` : "rgba(255,255,255,0.04)" }}
+              style={{ backgroundColor: day.active ? `${color}70` : "var(--app-chart-empty)" }}
             />
           ))}
         </div>

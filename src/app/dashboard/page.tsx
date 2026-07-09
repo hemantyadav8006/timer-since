@@ -5,9 +5,15 @@ import { ProtectedRoute } from "@/components/auth/AuthGate";
 export default function DashboardPage() {
   return (
     <ProtectedRoute>
-      <div className="relative flex min-h-dvh flex-col overflow-hidden bg-black text-white">
+      <div className="relative flex min-h-dvh flex-col overflow-hidden bg-app-bg text-app-fg">
         <ECGLine />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(0,255,136,0.08),transparent_55%)]" />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 20%, var(--app-accent-glow), transparent 55%)",
+          }}
+        />
         <Dashboard />
       </div>
     </ProtectedRoute>

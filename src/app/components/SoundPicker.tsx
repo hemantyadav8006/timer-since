@@ -60,7 +60,7 @@ export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
   if (sound === "none" || !config.src) {
     if (sound !== "none") {
       return (
-        <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-white/3 px-3 py-2 text-xs text-white/35">
+        <div className="flex items-center gap-2 rounded-xl border border-app-border bg-app-surface px-3 py-2 text-xs text-app-muted">
           <span>{config.icon}</span>
           <span>{config.label} (coming soon)</span>
         </div>
@@ -134,7 +134,7 @@ export default memo(function SoundPicker({ sound, color }: SoundPickerProps) {
             }}
             aria-label="Seek"
           />
-          <span className="text-[10px] text-white/35">
+          <span className="text-[10px] text-app-muted">
             {formatPlayback(currentTime)}/{formatPlayback(duration)}
           </span>
         </div>

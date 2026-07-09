@@ -11,6 +11,8 @@ import {
 import type { ThemeName, ThemeColors, ViewMode } from "@/types/timer";
 import { getTheme, THEME_NAMES } from "@/lib/themes";
 
+export type ColorMode = "light" | "dark";
+
 export type UserPreferences = {
   theme: string;
   language: string;
@@ -21,8 +23,9 @@ type ThemeContextValue = {
   themeName: ThemeName;
   theme: ThemeColors;
   setThemeName: (name: ThemeName) => void;
-  language: string;
-  setLanguage: (lang: string) => void;
+  colorMode: ColorMode;
+  setColorMode: (mode: ColorMode) => void;
+  toggleColorMode: () => void;
   reducedMotion: boolean;
   setReducedMotion: (v: boolean) => void;
   viewMode: ViewMode;
@@ -34,8 +37,9 @@ const ThemeContext = createContext<ThemeContextValue>({
   themeName: "emerald",
   theme: getTheme("emerald"),
   setThemeName: () => {},
-  language: "en",
-  setLanguage: () => {},
+  colorMode: "light",
+  setColorMode: () => {},
+  toggleColorMode: () => {},
   reducedMotion: false,
   setReducedMotion: () => {},
   viewMode: "grid",
@@ -49,16 +53,21 @@ export function useTheme() {
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeName, setThemeNameState] = useState<ThemeName>("emerald");
-  const [language, setLanguageState] = useState("en");
+  const [colorMode, setColorModeState] = useState<ColorMode>("light");
   const [reducedMotion, setReducedMotionState] = useState(false);
   const [viewMode, setViewModeState] = useState<ViewMode>("grid");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("timer_theme") as ThemeName | null;
-    if (saved && THEME_NAMES.includes(saved)) setThemeNameState(saved);
+    const savedTheme = localStorage.getItem("timer_theme") as ThemeName | null;
+    if (savedTheme && THEME_NAMES.includes(savedTheme)) {
+      setThemeNameState(savedTheme);
+    }
 
-    const savedLang = localStorage.getItem("timer_language");
-    if (savedLang) setLanguageState(savedLang);
+    const savedColorMode = localStorage.getItem("timer_color_mode") as ColorMode | null;
+    if (savedColorMode === "light" || savedColorMode === "dark") {
+      setColorModeState(savedColorMode);
+    }
 
     const savedMotion = localStorage.getItem("timer_reduced_motion");
     if (savedMotion === "true") setReducedMotionState(true);
@@ -67,17 +76,30 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     if (savedView) setViewModeState(savedView);
 
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mq.matches && !savedMotion) setReducedMotionState(true);
+    if (mq.matches && savedMotion !== "true" && savedMotion !== "false") {
+      setReducedMotionState(true);
+    }
+
+    setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    document.documentElement.classList.toggle("dark", colorMode === "dark");
+    localStorage.setItem("timer_color_mode", colorMode);
+  }, [colorMode, ready]);
 
   const setThemeName = useCallback((name: ThemeName) => {
     setThemeNameState(name);
     localStorage.setItem("timer_theme", name);
   }, []);
 
-  const setLanguage = useCallback((lang: string) => {
-    setLanguageState(lang);
-    localStorage.setItem("timer_language", lang);
+  const setColorMode = useCallback((mode: ColorMode) => {
+    setColorModeState(mode);
+  }, []);
+
+  const toggleColorMode = useCallback(() => {
+    setColorModeState((prev) => (prev === "light" ? "dark" : "light"));
   }, []);
 
   const setReducedMotion = useCallback((v: boolean) => {
@@ -92,12 +114,22 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
 
   const applyUserPreferences = useCallback(
     (prefs: UserPreferences) => {
-      const theme = prefs.theme as ThemeName;
-      if (THEME_NAMES.includes(theme)) setThemeName(theme);
-      if (prefs.language) setLanguage(prefs.language);
-      setReducedMotion(prefs.reducedMotion);
+      // Accent theme is device-local (Header saves to timer_theme). DB defaults
+      // stay at "emerald" and must not overwrite a user's local choice on reload.
+      const savedTheme = localStorage.getItem("timer_theme") as ThemeName | null;
+      if (
+        (!savedTheme || !THEME_NAMES.includes(savedTheme)) &&
+        THEME_NAMES.includes(prefs.theme as ThemeName)
+      ) {
+        setThemeName(prefs.theme as ThemeName);
+      }
+
+      const savedMotion = localStorage.getItem("timer_reduced_motion");
+      if (savedMotion !== "true" && savedMotion !== "false") {
+        setReducedMotion(prefs.reducedMotion);
+      }
     },
-    [setThemeName, setLanguage, setReducedMotion],
+    [setThemeName, setReducedMotion],
   );
 
   const theme = getTheme(themeName);
@@ -108,8 +140,9 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
         themeName,
         theme,
         setThemeName,
-        language,
-        setLanguage,
+        colorMode,
+        setColorMode,
+        toggleColorMode,
         reducedMotion,
         setReducedMotion,
         viewMode,

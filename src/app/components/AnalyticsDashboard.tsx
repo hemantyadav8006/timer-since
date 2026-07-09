@@ -42,8 +42,8 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-white/3 p-3">
-      <div className="text-[11px] uppercase tracking-wider text-white/40">
+    <div className="rounded-xl border border-app-border bg-app-surface p-3">
+      <div className="text-[11px] uppercase tracking-wider text-app-muted">
         {label}
       </div>
       <div
@@ -76,10 +76,10 @@ function BarChart({
             className="absolute bottom-0 w-full rounded-t-sm transition-all"
             style={{
               height: `${Math.max(2, (d.value / max) * 100)}%`,
-              backgroundColor: d.value > 0 ? color : "rgba(255,255,255,0.05)",
+              backgroundColor: d.value > 0 ? color : "var(--app-chart-empty)",
             }}
           />
-          <div className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 rounded bg-black/90 px-1.5 py-0.5 text-[9px] text-white/70 opacity-0 group-hover:opacity-100">
+          <div className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 rounded bg-app-surface-strong px-1.5 py-0.5 text-[9px] text-app-fg opacity-0 group-hover:opacity-100">
             {d.label}: {d.value}
           </div>
         </div>
@@ -115,16 +115,16 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
 
   return (
     <ModalBackdrop open={open} onClose={onClose} maxWidth="max-w-3xl">
-      <h2 className="mb-5 text-lg font-bold text-white/90">
+      <h2 className="mb-5 text-lg font-bold text-app-fg">
         Analytics Dashboard
       </h2>
 
       {loading && (
-        <div className="py-12 text-center text-white/40">
+        <div className="py-12 text-center text-app-muted">
           Loading analytics...
         </div>
       )}
-      {error && <div className="py-12 text-center text-red-300">{error}</div>}
+      {error && <div className="py-12 text-center text-app-danger">{error}</div>}
 
       {data && (
         <div className="space-y-6">
@@ -155,7 +155,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
           {/* Category distribution */}
           {data.categoryDistribution.length > 0 && (
             <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
                 Category Distribution
               </h3>
               <div className="space-y-1.5">
@@ -166,10 +166,10 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
                       key={category}
                       className="flex items-center gap-2 text-xs"
                     >
-                      <span className="w-20 capitalize text-white/60">
+                      <span className="w-20 capitalize text-app-muted">
                         {category}
                       </span>
-                      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-white/5">
+                      <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-app-surface-strong">
                         <div
                           className="h-full rounded-full"
                           style={{
@@ -179,7 +179,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
                           }}
                         />
                       </div>
-                      <span className="w-8 text-right text-white/50">
+                      <span className="w-8 text-right text-app-muted">
                         {count}
                       </span>
                     </div>
@@ -192,7 +192,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
           {/* Tags */}
           {data.tagDistribution.length > 0 && (
             <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
                 Top Tags
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -215,7 +215,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
           {/* Creation trend */}
           {data.creationTrend.length > 0 && (
             <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
                 Timer Creation Trend (12 months)
               </h3>
               <BarChart
@@ -225,7 +225,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
                 }))}
                 color={theme.primary}
               />
-              <div className="mt-1 flex justify-between text-[9px] text-white/25">
+              <div className="mt-1 flex justify-between text-[9px] text-app-muted">
                 <span>{data.creationTrend[0]?.month}</span>
                 <span>
                   {data.creationTrend[data.creationTrend.length - 1]?.month}
@@ -236,7 +236,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
 
           {/* Heatmap */}
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
               Activity Heatmap (365 days)
             </h3>
             <div className="overflow-x-auto">
@@ -255,7 +255,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
                           ? `${theme.primary}${Math.min(255, 40 + d.count * 50)
                               .toString(16)
                               .padStart(2, "0")}`
-                          : "rgba(255,255,255,0.04)",
+                          : "var(--app-chart-empty)",
                     }}
                   />
                 ))}
@@ -266,17 +266,17 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
           {/* Upcoming countdowns */}
           {data.upcomingCountdowns.length > 0 && (
             <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/45">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-app-muted">
                 Upcoming Countdowns
               </h3>
               <div className="space-y-1.5">
                 {data.upcomingCountdowns.map((c) => (
                   <div
                     key={c._id}
-                    className="flex items-center gap-2 rounded-lg border border-white/8 bg-white/3 px-3 py-2 text-xs"
+                    className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs"
                   >
                     <span>{c.icon}</span>
-                    <span className="flex-1 text-white/70">{c.title}</span>
+                    <span className="flex-1 text-app-fg">{c.title}</span>
                     <span style={{ color: theme.primary }}>
                       {formatDuration(c.remaining)}
                     </span>
@@ -305,7 +305,7 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
       <button
         type="button"
         onClick={onClose}
-        className="mt-5 w-full rounded-xl border border-white/10 py-2.5 text-sm text-white/50 hover:text-white"
+        className="mt-5 w-full rounded-xl border border-app-border py-2.5 text-sm text-app-muted hover:text-app-fg"
       >
         Close
       </button>

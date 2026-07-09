@@ -29,15 +29,15 @@ export default function EmptyState({
       className="flex flex-col items-center gap-3 py-16 text-center"
     >
       <span className="text-5xl opacity-30">{icon}</span>
-      <h3 className="text-base font-semibold text-white/60">{title}</h3>
+      <h3 className="text-base font-semibold text-app-muted">{title}</h3>
       {description && (
-        <p className="max-w-xs text-sm text-white/40">{description}</p>
+        <p className="max-w-xs text-sm text-app-muted">{description}</p>
       )}
       {action && (
         <button
           type="button"
           onClick={action.onClick}
-          className="mt-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-medium text-white/80 transition hover:bg-white/15"
+          className="mt-2 rounded-xl bg-app-surface-strong px-5 py-2.5 text-sm font-medium text-app-fg transition hover:bg-app-surface-strong"
         >
           {action.label}
         </button>

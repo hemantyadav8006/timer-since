@@ -1,7 +1,6 @@
 "use client";
 
-import { CATEGORIES, type TimerCategory, type SortOption } from "@/types/timer";
-import { useTheme } from "@/app/providers/ThemeProvider";
+import { CATEGORIES, type SortOption } from "@/types/timer";
 
 type FilterBarProps = {
   category: string;
@@ -25,6 +24,9 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "pinned-first", label: "Pinned" },
 ];
 
+const selectClass =
+  "w-full min-w-[8.5rem] rounded-lg border border-app-border bg-app-input px-2.5 py-2 text-xs text-app-fg outline-none md:py-1.5";
+
 export default function FilterBar({
   category,
   onCategoryChange,
@@ -37,15 +39,12 @@ export default function FilterBar({
   modeFilter,
   onModeChange,
 }: FilterBarProps) {
-  const { theme } = useTheme();
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* Category filter */}
+    <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center">
       <select
         value={category}
         onChange={(e) => onCategoryChange(e.target.value)}
-        className="rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white/60 outline-none"
+        className={selectClass}
         aria-label="Filter by category"
       >
         <option value="">All Categories</option>
@@ -56,11 +55,10 @@ export default function FilterBar({
         ))}
       </select>
 
-      {/* Mode filter */}
       <select
         value={modeFilter}
         onChange={(e) => onModeChange(e.target.value)}
-        className="rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white/60 outline-none"
+        className={selectClass}
         aria-label="Filter by mode"
       >
         <option value="">All Modes</option>
@@ -68,11 +66,10 @@ export default function FilterBar({
         <option value="countdown">Countdown</option>
       </select>
 
-      {/* Sort */}
       <select
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value as SortOption)}
-        className="rounded-lg border border-white/10 bg-transparent px-2.5 py-1.5 text-xs text-white/60 outline-none"
+        className={`${selectClass} col-span-2 md:col-span-1`}
         aria-label="Sort by"
       >
         {SORT_OPTIONS.map((s) => (
@@ -82,27 +79,25 @@ export default function FilterBar({
         ))}
       </select>
 
-      {/* Favorites toggle */}
       <button
         type="button"
         onClick={onToggleFavorites}
-        className={`rounded-lg border px-2.5 py-1.5 text-xs transition ${
+        className={`rounded-lg border px-2.5 py-2 text-xs transition md:py-1.5 ${
           showFavorites
-            ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
-            : "border-white/10 text-white/40 hover:text-white/70"
+            ? "border-amber-400/30 bg-amber-400/10 text-amber-600 dark:text-amber-300"
+            : "border-app-border text-app-muted hover:text-app-fg"
         }`}
       >
         ⭐ Favorites
       </button>
 
-      {/* Archived toggle */}
       <button
         type="button"
         onClick={onToggleArchived}
-        className={`rounded-lg border px-2.5 py-1.5 text-xs transition ${
+        className={`rounded-lg border px-2.5 py-2 text-xs transition md:py-1.5 ${
           showArchived
-            ? "border-white/25 bg-white/10 text-white/80"
-            : "border-white/10 text-white/40 hover:text-white/70"
+            ? "border-app-border bg-app-surface-strong text-app-fg"
+            : "border-app-border text-app-muted hover:text-app-fg"
         }`}
       >
         📦 Archived

@@ -129,32 +129,32 @@ export default function EditTimerModal({
 
   return (
     <ModalBackdrop open={open} onClose={onClose}>
-      <h2 className="mb-4 text-lg font-bold text-white/90">Edit Timer</h2>
+      <h2 className="mb-4 text-lg font-bold text-app-fg">Edit Timer</h2>
       <div className="space-y-4">
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="mb-1 block text-xs text-white/50">Title</label>
+            <label className="mb-1 block text-xs text-app-muted">Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
-              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+              className="w-full rounded-xl border border-app-border bg-app-input px-4 py-2.5 text-sm text-app-fg outline-none focus:border-app-fg/25"
             />
           </div>
           <div className="w-20">
-            <label className="mb-1 block text-xs text-white/50">Icon</label>
+            <label className="mb-1 block text-xs text-app-muted">Icon</label>
             <input
               type="text"
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
               maxLength={4}
-              className="w-full rounded-xl border border-white/10 bg-black/60 px-3 py-2.5 text-center text-lg outline-none focus:border-white/25"
+              className="w-full rounded-xl border border-app-border bg-app-input px-3 py-2.5 text-center text-lg outline-none focus:border-app-fg/25"
             />
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-white/50">
+          <label className="mb-1 block text-xs text-app-muted">
             Description
           </label>
           <input
@@ -162,26 +162,26 @@ export default function EditTimerModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
-            className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-2.5 text-sm text-app-fg outline-none focus:border-app-fg/25"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-white/50">
+          <label className="mb-1 block text-xs text-app-muted">
             {timer.mode === "elapsed" ? "Start date" : "Target date"}
           </label>
           <input
             type="datetime-local"
             value={dateValue}
             onChange={(e) => setDateValue(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-2.5 text-sm text-app-fg outline-none focus:border-app-fg/25"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-white/50">Category</label>
+          <label className="mb-1 block text-xs text-app-muted">Category</label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as TimerCategory)}
-            className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none"
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-2.5 text-sm text-app-fg outline-none"
           >
             {CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>
@@ -191,24 +191,24 @@ export default function EditTimerModal({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-white/50">Tags</label>
+          <label className="mb-1 block text-xs text-app-muted">Tags</label>
           <input
             type="text"
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-2.5 text-sm text-app-fg outline-none focus:border-app-fg/25"
             placeholder="gym, study"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-white/50">Color</label>
+          <label className="mb-1 block text-xs text-app-muted">Color</label>
           <div className="flex flex-wrap gap-2">
             {PRESET_COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
                 onClick={() => setColor(c)}
-                className={`h-7 w-7 rounded-full border-2 transition ${color === c ? "border-white scale-110" : "border-transparent"}`}
+                className={`h-7 w-7 rounded-full border-2 transition ${color === c ? "border-app-fg scale-110" : "border-transparent"}`}
                 style={{ backgroundColor: c }}
               />
             ))}
@@ -239,7 +239,7 @@ export default function EditTimerModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/55 hover:text-white"
+            className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg"
           >
             Cancel
           </button>

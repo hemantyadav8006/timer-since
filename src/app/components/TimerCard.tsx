@@ -46,10 +46,10 @@ export default memo(function TimerCard({
       <button
         type="button"
         onClick={onClick}
-        className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/3 px-3 py-2 text-left transition hover:bg-white/6"
+        className="flex items-center gap-3 rounded-xl border border-app-border bg-app-surface px-3 py-2 text-left transition hover:bg-app-surface-strong"
       >
         <span className="text-base">{timer.icon}</span>
-        <span className="min-w-0 flex-1 truncate text-xs font-medium text-white/80">
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-app-fg">
           {timer.title}
         </span>
         <span
@@ -70,18 +70,18 @@ export default memo(function TimerCard({
       <button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-4 rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-left transition hover:bg-white/6"
+        className="flex w-full items-center gap-4 rounded-xl border border-app-border bg-app-surface px-4 py-3 text-left transition hover:bg-app-surface-strong"
       >
         <span className="text-2xl">{timer.icon}</span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold text-white/90">
+            <span className="truncate text-sm font-semibold text-app-fg">
               {timer.title}
             </span>
             {timer.pinned && <span className="text-xs">📌</span>}
             {timer.favorite && <span className="text-xs">⭐</span>}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-xs text-white/40">
+          <div className="mt-0.5 flex items-center gap-2 text-xs text-app-muted">
             <span>{timer.mode === "countdown" ? "Countdown" : "Elapsed"}</span>
             <span>&middot;</span>
             <span className="capitalize">{timer.category}</span>
@@ -100,7 +100,7 @@ export default memo(function TimerCard({
           {done ? "Done!" : timeStr}
         </div>
         {timer.stopped && (
-          <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] text-amber-300">
+          <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] text-app-warning">
             Paused
           </span>
         )}
@@ -113,7 +113,7 @@ export default memo(function TimerCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex flex-col gap-3 rounded-2xl border border-white/8 bg-white/3 p-5 text-left transition hover:bg-white/6"
+      className="group flex flex-col gap-3 rounded-2xl border border-app-border bg-app-surface p-5 text-left transition hover:bg-app-surface-strong"
       style={{ borderColor: `${timer.color}15` }}
     >
       <div className="flex items-start justify-between">
@@ -121,26 +121,26 @@ export default memo(function TimerCard({
           <span className="text-xl">{timer.icon}</span>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="truncate text-sm font-semibold text-white/90">
+              <span className="truncate text-sm font-semibold text-app-fg">
                 {timer.title}
               </span>
               {timer.pinned && <span className="text-[10px]">📌</span>}
               {timer.favorite && <span className="text-[10px]">⭐</span>}
             </div>
-            <div className="text-[11px] capitalize text-white/40">
+            <div className="text-[11px] capitalize text-app-muted">
               {timer.category}
             </div>
           </div>
         </div>
         {timer.stopped && (
-          <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] text-amber-300">
+          <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] text-app-warning">
             Paused
           </span>
         )}
       </div>
 
       {timer.description && (
-        <p className="line-clamp-2 text-xs text-white/35">{timer.description}</p>
+        <p className="line-clamp-2 text-xs text-app-muted">{timer.description}</p>
       )}
 
       <div
@@ -155,7 +155,7 @@ export default memo(function TimerCard({
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-[0.2em] text-white/35">
+        <span className="text-[11px] uppercase tracking-[0.2em] text-app-muted">
           {timer.mode === "countdown" ? "Remaining" : "Elapsed"}
         </span>
         {timer.tags.length > 0 && (
@@ -163,7 +163,7 @@ export default memo(function TimerCard({
             {timer.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] text-white/40"
+                className="rounded-full bg-app-surface-strong px-1.5 py-0.5 text-[9px] text-app-muted"
               >
                 {tag}
               </span>

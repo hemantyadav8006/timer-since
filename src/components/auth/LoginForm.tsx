@@ -44,48 +44,48 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/3 p-6 backdrop-blur-md sm:p-8">
-      <h1 className="mb-1 text-center text-2xl font-bold text-white/90">
+    <div className="w-full rounded-2xl border border-app-border bg-app-surface p-5 backdrop-blur-md md:p-8">
+      <h1 className="mb-1 text-center text-xl font-bold text-app-fg md:text-2xl">
         Time Since
       </h1>
-      <p className="mb-6 text-center text-sm text-white/45">
+      <p className="mb-6 text-center text-sm text-app-muted">
         {isLogin ? "Sign in to manage your timers" : "Create your account"}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isLogin && (
           <div>
-            <label className="mb-1 block text-xs text-white/50">Name</label>
+            <label className="mb-1 block text-xs text-app-muted">Name</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required={!isLogin}
-              className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+              className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
               autoComplete="name"
             />
           </div>
         )}
         <div>
-          <label className="mb-1 block text-xs text-white/50">Email</label>
+          <label className="mb-1 block text-xs text-app-muted">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
             autoComplete="email"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-white/50">Password</label>
+          <label className="mb-1 block text-xs text-app-muted">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full rounded-xl border border-white/10 bg-black/60 px-4 py-2.5 text-sm text-white outline-none focus:border-white/25"
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
             autoComplete={isLogin ? "current-password" : "new-password"}
           />
         </div>
@@ -93,7 +93,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-black transition disabled:opacity-50"
+          className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-black transition disabled:opacity-50 ${loading ? "opacity-50 cursor-not-allowed animate-bounce" : ""}`}
           style={{
             backgroundColor: theme.primary,
             boxShadow: `0 0 20px ${theme.glow}`,
@@ -109,9 +109,11 @@ export default function LoginForm() {
           setIsLogin(!isLogin);
           setError(null);
         }}
-        className="mt-4 w-full text-center text-xs text-white/45 hover:text-white/70"
+        className="mt-4 w-full text-center text-xs text-app-muted transition hover:text-app-fg"
       >
-        {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
+        {isLogin
+          ? "Don't have an account? Sign up"
+          : "Already have an account? Log in"}
       </button>
     </div>
   );

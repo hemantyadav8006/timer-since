@@ -57,10 +57,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const variantStyles: Record<ToastVariant, string> = {
-    success: "border-emerald-500/30 bg-emerald-500/15 text-emerald-200",
-    error: "border-red-500/30 bg-red-500/15 text-red-200",
-    info: "border-white/15 bg-white/10 text-white/80",
-    undo: "border-amber-500/30 bg-amber-500/15 text-amber-200",
+    success:
+      "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-200",
+    error: "border-red-500/30 bg-red-500/15 text-app-danger",
+    info: "border-app-border bg-app-surface-strong text-app-fg",
+    undo: "border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-200",
   };
 
   return (

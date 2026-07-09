@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "@/app/providers/ThemeProvider";
 import { useTimerTick } from "@/hooks/useTimerTick";
 import { computeElapsedMs } from "@/types/timer";
 import type { TimerItem } from "@/types/timer";
@@ -42,21 +41,20 @@ export default function TimerFocusView({
   onTimerUpdated,
 }: TimerFocusViewProps) {
   const [milestoneManagerOpen, setMilestoneManagerOpen] = useState(false);
-  const { language } = useTheme();
   const now = useTimerTick(timer.stopped);
   const elapsedMs = computeElapsedMs(timer, now);
 
   return (
-    <div className="relative z-10 mx-auto w-full max-w-2xl flex-1 px-4 pb-8 sm:px-6">
+    <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pb-8 md:px-6">
       <button
         type="button"
         onClick={onBack}
-        className="mb-4 flex items-center gap-2 text-sm text-white/40 hover:text-white"
+        className="mb-4 flex items-center gap-2 text-sm text-app-muted hover:text-app-fg"
       >
         &larr; Dashboard
       </button>
 
-      <div className="rounded-2xl border border-white/8 bg-white/3 p-5 backdrop-blur-md sm:p-7">
+      <div className="rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md md:p-7">
         <TimerDisplay
           timer={timer}
           now={now}
@@ -77,12 +75,12 @@ export default function TimerFocusView({
       </div>
 
       {timer.mode === "elapsed" && (
-        <div className="mt-4 rounded-2xl border border-white/8 bg-white/3 p-4 backdrop-blur-md">
+        <div className="mt-4 rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md">
           <MilestoneBadges timer={timer} elapsedMs={elapsedMs} />
           <button
             type="button"
             onClick={() => setMilestoneManagerOpen(true)}
-            className="mt-3 w-full rounded-lg border border-white/8 py-2 text-xs text-white/40 hover:text-white/70"
+            className="mt-3 w-full rounded-lg border border-app-border py-2 text-xs text-app-muted hover:text-app-fg"
           >
             Manage Milestones
           </button>
@@ -96,7 +94,7 @@ export default function TimerFocusView({
       />
 
       {timer.streaks.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-white/8 bg-white/3 p-4 backdrop-blur-md">
+        <div className="mt-4 rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md">
           <StreakHeatmap
             streaks={timer.streaks}
             currentStreakMs={elapsedMs}
@@ -105,7 +103,7 @@ export default function TimerFocusView({
         </div>
       )}
 
-      <EntriesPanel timerId={timer._id} color={timer.color} language={language} />
+      <EntriesPanel timerId={timer._id} color={timer.color} />
     </div>
   );
 }

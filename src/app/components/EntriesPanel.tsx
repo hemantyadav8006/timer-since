@@ -17,13 +17,11 @@ const MAX_TEXT = 280;
 type EntriesPanelProps = {
   timerId: string;
   color: string;
-  language: string;
 };
 
 export default function EntriesPanel({
   timerId,
   color,
-  language,
 }: EntriesPanelProps) {
   const [entries, setEntries] = useState<EntryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +149,7 @@ export default function EntriesPanel({
   );
 
   return (
-    <div className="mt-4 rounded-2xl border border-white/8 bg-white/3 backdrop-blur-md">
+    <div className="mt-4 rounded-2xl border border-app-border bg-app-surface backdrop-blur-md">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -159,20 +157,26 @@ export default function EntriesPanel({
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <div>
-          <div className="text-sm font-semibold text-white/80">
+          <div className="text-sm font-semibold text-app-fg">
             Journal Entries
           </div>
-          <div className="text-[11px] text-white/40">
+          <div className="text-[11px] text-app-muted">
             {entries.length} total
           </div>
         </div>
         <span
-          className="rounded-full border px-2 py-0.5 text-[11px] transition"
-          style={{
-            borderColor: open ? `${color}30` : "rgba(255,255,255,0.1)",
-            color: open ? color : "rgba(255,255,255,0.5)",
-            backgroundColor: open ? `${color}10` : "transparent",
-          }}
+          className={`rounded-full border px-2 py-0.5 text-[11px] transition ${
+            open ? "" : "border-app-border text-app-muted"
+          }`}
+          style={
+            open
+              ? {
+                  borderColor: `${color}30`,
+                  color,
+                  backgroundColor: `${color}10`,
+                }
+              : undefined
+          }
         >
           {open ? "Hide" : "Show"}
         </span>
@@ -192,7 +196,7 @@ export default function EntriesPanel({
               value={newWhen}
               onChange={(e) => setNewWhen(e.target.value)}
               aria-label="Entry date"
-              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/60 px-3 py-2 text-xs text-white outline-none focus:border-white/25"
+              className="min-w-0 flex-1 rounded-xl border border-app-border bg-app-input px-3 py-2 text-xs text-app-fg outline-none focus:border-app-fg/25"
             />
             <input
               type="text"
@@ -204,7 +208,7 @@ export default function EntriesPanel({
               maxLength={MAX_TEXT}
               placeholder="Write something..."
               aria-label="Entry text"
-              className="min-w-0 flex-[1.5] rounded-xl border border-white/10 bg-black/60 px-3 py-2 text-xs text-white outline-none focus:border-white/25"
+              className="min-w-0 flex-[1.5] rounded-xl border border-app-border bg-app-input px-3 py-2 text-xs text-app-fg outline-none focus:border-app-fg/25"
             />
             <motion.button
               whileHover={{ scale: 1.03 }}
@@ -219,10 +223,10 @@ export default function EntriesPanel({
             </motion.button>
           </div>
 
-          <div className="mt-3 max-h-[40vh] overflow-auto rounded-xl border border-white/8">
+          <div className="mt-3 max-h-[40vh] overflow-auto rounded-xl border border-app-border">
             <table className="w-full table-fixed text-left text-xs">
-              <thead className="sticky top-0 bg-black/90 backdrop-blur">
-                <tr className="text-white/50">
+              <thead className="sticky top-0 bg-app-surface-strong backdrop-blur">
+                <tr className="text-app-muted">
                   <th className="w-[32%] px-3 py-2">Date/time</th>
                   <th className="w-[43%] px-3 py-2">Text</th>
                   <th className="w-[25%] px-3 py-2 text-right">Actions</th>
@@ -231,13 +235,13 @@ export default function EntriesPanel({
               <tbody>
                 {loading ? (
                   <tr>
-                    <td className="px-3 py-3 text-white/40" colSpan={3}>
+                    <td className="px-3 py-3 text-app-muted" colSpan={3}>
                       Loading...
                     </td>
                   </tr>
                 ) : entries.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-3 text-white/40" colSpan={3}>
+                    <td className="px-3 py-3 text-app-muted" colSpan={3}>
                       No entries yet.
                     </td>
                   </tr>
@@ -247,7 +251,7 @@ export default function EntriesPanel({
                     return (
                       <tr
                         key={entry._id}
-                        className="border-t border-white/6 align-top hover:bg-white/2"
+                        className="border-t border-app-border align-top hover:bg-app-surface"
                       >
                         <td className="px-3 py-2">
                           {isEdit ? (
@@ -255,10 +259,10 @@ export default function EntriesPanel({
                               type="datetime-local"
                               value={editWhen}
                               onChange={(e) => setEditWhen(e.target.value)}
-                              className="w-full rounded-lg border border-white/10 bg-black/60 px-2 py-1 text-xs text-white outline-none"
+                              className="w-full rounded-lg border border-app-border bg-app-input px-2 py-1 text-xs text-app-fg outline-none"
                             />
                           ) : (
-                            <span className="text-white/70">
+                            <span className="text-app-fg">
                               {new Date(entry.when).toLocaleString()}
                             </span>
                           )}
@@ -275,10 +279,10 @@ export default function EntriesPanel({
                                 if (e.key === "Escape") cancelEdit();
                               }}
                               maxLength={MAX_TEXT}
-                              className="w-full rounded-lg border border-white/10 bg-black/60 px-2 py-1 text-xs text-white outline-none"
+                              className="w-full rounded-lg border border-app-border bg-app-input px-2 py-1 text-xs text-app-fg outline-none"
                             />
                           ) : (
-                            <span className="text-white/60">{entry.text}</span>
+                            <span className="text-app-muted">{entry.text}</span>
                           )}
                         </td>
                         <td className="px-3 py-2">
@@ -297,7 +301,7 @@ export default function EntriesPanel({
                                 <button
                                   type="button"
                                   onClick={cancelEdit}
-                                  className="rounded-lg border border-white/12 px-2 py-1 text-[10px] text-white/50"
+                                  className="rounded-lg border border-app-border px-2 py-1 text-[10px] text-app-muted"
                                 >
                                   Cancel
                                 </button>
@@ -307,14 +311,14 @@ export default function EntriesPanel({
                                 <button
                                   type="button"
                                   onClick={() => beginEdit(entry)}
-                                  className="rounded-lg border border-white/12 px-2 py-1 text-[10px] text-white/50 hover:text-white"
+                                  className="rounded-lg border border-app-border px-2 py-1 text-[10px] text-app-muted hover:text-app-fg"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDelete(entry._id)}
-                                  className="rounded-lg border border-red-500/20 px-2 py-1 text-[10px] text-red-300/60 hover:text-red-200"
+                                  className="rounded-lg border border-red-500/20 px-2 py-1 text-[10px] text-app-danger hover:text-app-danger-hover"
                                 >
                                   Del
                                 </button>

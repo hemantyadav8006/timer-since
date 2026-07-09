@@ -31,20 +31,26 @@ export default function SharedTimerPage({
   const noop = () => {};
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-black text-white">
+    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-app-bg px-4 text-app-fg">
       <ECGLine />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(0,255,136,0.08),transparent_55%)]" />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 20%, var(--app-accent-glow), transparent 55%)",
+        }}
+      />
 
-      <main className="relative z-10 w-full max-w-2xl px-4 py-12">
+      <main className="relative z-10 w-full max-w-2xl py-8 md:py-12">
         {error ? (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-8 text-center">
-            <div className="text-lg text-red-200">{error}</div>
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center md:p-8">
+            <div className="text-base text-red-500 md:text-lg">{error}</div>
           </div>
         ) : !timer ? (
-          <div className="text-center text-white/50">Loading shared timer...</div>
+          <div className="text-center text-app-muted">Loading shared timer...</div>
         ) : (
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+          <div className="space-y-4 md:space-y-6">
+            <div className="rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md md:p-6">
               <TimerDisplay
                 timer={timer}
                 now={now}
@@ -61,12 +67,12 @@ export default function SharedTimerPage({
             </div>
 
             {timer.mode === "elapsed" && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+              <div className="rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md">
                 <MilestoneBadges timer={timer} elapsedMs={elapsedMs} />
               </div>
             )}
 
-            <div className="text-center text-xs text-white/30">
+            <div className="text-center text-xs text-app-muted">
               Shared timer &middot; Read only
             </div>
           </div>

@@ -44,7 +44,7 @@ export default function MilestoneBadges({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-white/45">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-app-muted">
         Milestones
       </h3>
 
@@ -68,16 +68,16 @@ export default function MilestoneBadges({
       )}
 
       {nextUp && (
-        <div className="rounded-xl border border-white/8 bg-white/3 p-3">
+        <div className="rounded-xl border border-app-border bg-app-surface p-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-white/50">
+            <span className="text-app-muted">
               Next: {nextUp.milestone.icon} {nextUp.milestone.label}
             </span>
             <span style={{ color: timer.color }}>
               {Math.round(nextUp.progress * 100)}%
             </span>
           </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-app-surface-strong">
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
@@ -86,7 +86,7 @@ export default function MilestoneBadges({
               }}
             />
           </div>
-          <div className="mt-1 text-[10px] text-white/35">
+          <div className="mt-1 text-[10px] text-app-muted">
             {formatDuration(nextUp.milestone.durationMs - elapsedMs)} remaining
           </div>
         </div>

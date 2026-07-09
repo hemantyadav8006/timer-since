@@ -300,9 +300,9 @@ export default function Dashboard() {
     <>
       <Header onSearch={setSearchQuery} searchQuery={searchQuery} />
 
-      <div className="relative z-10 flex-1 px-4 pb-8 sm:px-6">
+      <div className="relative z-10 flex-1 px-4 pb-8 md:px-6">
         {/* Quick stats bar */}
-        <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-white/40">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-app-muted md:gap-3">
           <span>
             {total} timer{total !== 1 ? "s" : ""}
           </span>
@@ -317,42 +317,44 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Actions + Filters */}
-        <div className="mb-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="rounded-xl px-5 py-2.5 text-sm font-semibold text-black transition hover:scale-[1.02] active:scale-[0.98]"
-            style={{
-              backgroundColor: theme.primary,
-              boxShadow: `0 0 20px ${theme.glow}`,
-            }}
-          >
-            + Create Timer
-          </button>
-          <button
-            type="button"
-            onClick={() => setAnalyticsOpen(true)}
-            className="rounded-xl border border-white/8 bg-white/3 px-4 py-2.5 text-sm text-white/55 hover:text-white/80"
-          >
-            Analytics
-          </button>
-          <button
-            type="button"
-            onClick={() => setBreathingOpen(true)}
-            className="rounded-xl border border-white/8 bg-white/3 px-4 py-2.5 text-sm text-white/55 hover:text-white/80"
-          >
-            Breathing
-          </button>
-          <button
-            type="button"
-            onClick={() => setExportOpen(true)}
-            className="rounded-xl border border-white/8 bg-white/3 px-4 py-2.5 text-sm text-white/55 hover:text-white/80"
-          >
-            Export
-          </button>
+        {/* Actions + Filters — mobile-first stack */}
+        <div className="mb-5 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:flex md:flex-wrap md:gap-3">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="col-span-2 rounded-xl px-4 py-3 text-sm font-semibold text-black transition active:scale-[0.98] sm:col-span-1 md:px-5 md:py-2.5"
+              style={{
+                backgroundColor: theme.primary,
+                boxShadow: `0 0 20px ${theme.glow}`,
+              }}
+            >
+              + Create Timer
+            </button>
+            <button
+              type="button"
+              onClick={() => setAnalyticsOpen(true)}
+              className="rounded-xl border border-app-border bg-app-surface px-3 py-3 text-sm text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
+            >
+              Analytics
+            </button>
+            <button
+              type="button"
+              onClick={() => setBreathingOpen(true)}
+              className="rounded-xl border border-app-border bg-app-surface px-3 py-3 text-sm text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
+            >
+              Breathing
+            </button>
+            <button
+              type="button"
+              onClick={() => setExportOpen(true)}
+              className="rounded-xl border border-app-border bg-app-surface px-3 py-3 text-sm text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
+            >
+              Export
+            </button>
+          </div>
 
-          <div className="ml-auto">
+          <div className="w-full md:ml-auto md:w-auto">
             <FilterBar
               category={categoryFilter}
               onCategoryChange={setCategoryFilter}
@@ -370,7 +372,7 @@ export default function Dashboard() {
 
         {/* Timer grid/list */}
         {loading ? (
-          <div className="py-20 text-center text-white/40">Loading...</div>
+          <div className="py-16 text-center text-app-muted md:py-20">Loading...</div>
         ) : timers.length === 0 ? (
           debouncedSearch ? (
             <EmptyState
@@ -408,7 +410,7 @@ export default function Dashboard() {
             className={
               viewMode === "list" || viewMode === "compact"
                 ? "flex flex-col gap-2"
-                : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                : "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4"
             }
           >
             <AnimatePresence mode="popLayout">

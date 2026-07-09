@@ -58,7 +58,10 @@ export default memo(function TimerDisplay({
   }, [effectiveNow, timer.startDate, timer.targetDate, isCountdown]);
 
   const formattedDate = useMemo(
-    () => new Date(isCountdown ? (timer.targetDate ?? timer.startDate) : timer.startDate).toLocaleString(),
+    () =>
+      new Date(
+        isCountdown ? (timer.targetDate ?? timer.startDate) : timer.startDate,
+      ).toLocaleString(),
     [timer.startDate, timer.targetDate, isCountdown],
   );
 
@@ -70,14 +73,14 @@ export default memo(function TimerDisplay({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="text-2xl">{timer.icon}</span>
-            <h2 className="truncate text-lg font-bold text-white/90">
+            <h2 className="truncate text-lg font-bold text-app-fg">
               {timer.title}
             </h2>
           </div>
           {timer.description && (
-            <p className="mt-1 text-sm text-white/45">{timer.description}</p>
+            <p className="mt-1 text-sm text-app-muted">{timer.description}</p>
           )}
-          <div className="mt-1 text-xs text-white/40">
+          <div className="mt-1 text-xs text-app-muted">
             {isCountdown ? "Target" : "Started"}: {formattedDate}
           </div>
           {timer.tags.length > 0 && (
@@ -85,7 +88,7 @@ export default memo(function TimerDisplay({
               {timer.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-white/50"
+                  className="rounded-full bg-app-surface-strong px-2 py-0.5 text-[11px] text-app-muted"
                 >
                   {tag}
                 </span>
@@ -96,23 +99,63 @@ export default memo(function TimerDisplay({
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-1.5">
-          <button type="button" onClick={onToggleFavorite} title={timer.favorite ? "Unfavorite" : "Favorite"} className="rounded-lg border border-white/8 px-2 py-1.5 text-xs hover:bg-white/5">
+          <button
+            type="button"
+            onClick={onToggleFavorite}
+            title={timer.favorite ? "Unfavorite" : "Favorite"}
+            className="rounded-lg border border-app-border px-2 py-1.5 text-xs hover:bg-app-surface-strong"
+          >
             {timer.favorite ? "⭐" : "☆"}
           </button>
-          <button type="button" onClick={onTogglePin} title={timer.pinned ? "Unpin" : "Pin"} className="rounded-lg border border-white/8 px-2 py-1.5 text-xs hover:bg-white/5">
+          <button
+            type="button"
+            onClick={onTogglePin}
+            title={timer.pinned ? "Unpin" : "Pin"}
+            className="rounded-lg border border-app-border px-2 py-1.5 text-xs hover:bg-app-surface-strong"
+          >
             {timer.pinned ? "📌" : "📍"}
           </button>
-          <button type="button" onClick={onEdit} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Edit</button>
-          <button type="button" onClick={onDuplicate} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Duplicate</button>
-          <button type="button" onClick={onShare} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Share</button>
-          <button type="button" onClick={onArchive} className="rounded-lg border border-white/8 px-2.5 py-1.5 text-xs text-white/50 hover:text-white">Archive</button>
-          <button type="button" onClick={onDelete} className="rounded-lg border border-red-500/15 px-2.5 py-1.5 text-xs text-red-300/60 hover:text-red-200">Delete</button>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            onClick={onShare}
+            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+          >
+            Share
+          </button>
+          <button
+            type="button"
+            onClick={onArchive}
+            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+          >
+            Archive
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="rounded-lg border border-red-500/15 px-2.5 py-1.5 text-xs text-app-danger hover:text-app-danger-hover"
+          >
+            Delete
+          </button>
         </div>
       </div>
 
       {/* Timer counter */}
       <div
-        className="animate-glow-pulse relative rounded-2xl border bg-black/40 px-6 py-8 text-center sm:py-10"
+        className="animate-glow-pulse relative rounded-2xl border bg-app-surface px-6 py-8 text-center sm:py-10"
         style={{
           borderColor: `${timer.color}15`,
           boxShadow: `0 0 50px ${timer.color}08`,
@@ -120,69 +163,76 @@ export default memo(function TimerDisplay({
       >
         <div
           className="absolute inset-0 rounded-2xl"
-          style={{ background: `radial-gradient(circle at 50% 40%, ${timer.color}10, transparent 55%)` }}
+          style={{
+            background: `radial-gradient(circle at 50% 40%, ${timer.color}10, transparent 55%)`,
+          }}
         />
 
         {done ? (
-          <div className="relative text-2xl font-bold" style={{ color: timer.color }}>
+          <div
+            className="relative text-2xl font-bold"
+            style={{ color: timer.color }}
+          >
             Countdown complete!
           </div>
         ) : (
-          <div className="relative font-mono text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          <div className="relative font-mono text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
             {elapsed.years > 0 && (
               <>
                 <span style={{ color: timer.color }}>{elapsed.years}</span>
-                <span className="text-white/50 text-[0.6em]">y </span>
+                <span className="text-app-muted text-[0.6em]">y </span>
               </>
             )}
             {(elapsed.years > 0 || elapsed.months > 0) && (
               <>
                 <span style={{ color: timer.color }}>{elapsed.months}</span>
-                <span className="text-white/50 text-[0.6em]">mo </span>
+                <span className="text-app-muted text-[0.6em]">mo </span>
               </>
             )}
             <span style={{ color: timer.color }}>{elapsed.days}</span>
-            <span className="text-white/50 text-[0.6em]">d </span>
-            <span>{pad2(elapsed.hours)}</span>
-            <span className="text-white/50">:</span>
-            <span>{pad2(elapsed.minutes)}</span>
-            <span className="text-white/50">:</span>
-            <span>{pad2(elapsed.seconds)}</span>
+            <span className="text-app-muted text-[0.6em]">d </span>
+            <span className="text-app-fg">{pad2(elapsed.hours)}</span>
+            <span className="text-app-muted">:</span>
+            <span className="text-app-fg">{pad2(elapsed.minutes)}</span>
+            <span className="text-app-muted">:</span>
+            <span className="text-app-fg">{pad2(elapsed.seconds)}</span>
           </div>
         )}
 
-        <div className="relative mt-3 text-xs uppercase tracking-[0.3em] text-white/45">
+        <div className="relative mt-3 text-xs uppercase tracking-[0.3em] text-app-muted">
           {isCountdown ? "Remaining" : "Elapsed time"}
         </div>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        {!timer.stopped ? (
-          <button
-            type="button"
-            onClick={onStop}
-            className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-red-300 transition hover:border-red-500/40 active:scale-[0.98]"
-          >
-            Stop Timer
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onResync}
-            className="inline-flex flex-1 items-center justify-center rounded-xl px-5 py-3 font-semibold text-black transition active:scale-[0.98]"
-            style={{
-              backgroundColor: timer.color,
-              boxShadow: `0 0 24px ${timer.color}40`,
-            }}
-          >
-            Resync
-          </button>
-        )}
-      </div>
+      {done ? null : (
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {!timer.stopped ? (
+            <button
+              type="button"
+              onClick={onStop}
+              className="inline-flex flex-1 items-center justify-center rounded-xl border border-red-500/25 bg-red-500/10 px-5 py-3 font-semibold text-app-danger transition hover:border-red-500/40 active:scale-[0.98]"
+            >
+              Stop Timer
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onResync}
+              className="inline-flex flex-1 items-center justify-center rounded-xl px-5 py-3 font-semibold text-black transition active:scale-[0.98]"
+              style={{
+                backgroundColor: timer.color,
+                boxShadow: `0 0 24px ${timer.color}40`,
+              }}
+            >
+              Resync
+            </button>
+          )}
+        </div>
+      )}
 
-      {timer.stopped && (
-        <div className="text-center text-sm text-amber-300/80">
+      {timer.stopped && !done && (
+        <div className="text-center text-sm text-app-warning">
           Timer paused — press Resync to resume
         </div>
       )}

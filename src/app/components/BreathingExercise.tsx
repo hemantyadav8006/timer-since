@@ -88,7 +88,7 @@ export default function BreathingExercise({ open, onClose }: Props) {
 
   return (
     <ModalBackdrop open={open} onClose={onClose} maxWidth="max-w-sm">
-      <h2 className="mb-4 text-center text-lg font-bold text-white/90">
+      <h2 className="mb-4 text-center text-lg font-bold text-app-fg">
         Breathing Exercise
       </h2>
 
@@ -99,7 +99,7 @@ export default function BreathingExercise({ open, onClose }: Props) {
               key={k}
               type="button"
               onClick={() => setPattern(k)}
-              className={`rounded-xl border px-4 py-2 text-sm transition ${pattern === k ? "border-white/25 bg-white/8 text-white" : "border-white/8 text-white/45 hover:text-white"}`}
+              className={`rounded-xl border px-4 py-2 text-sm transition ${pattern === k ? "border-app-fg/25 bg-app-surface-strong text-app-fg" : "border-app-border text-app-muted hover:text-app-fg"}`}
             >
               {v.label}
             </button>
@@ -127,18 +127,18 @@ export default function BreathingExercise({ open, onClose }: Props) {
               >
                 {secsLeft}
               </div>
-              <div className="text-sm text-white/55">
+              <div className="text-sm text-app-muted">
                 {PHASE_LABELS[phase[0]]}
               </div>
             </>
           ) : (
-            <div className="text-sm text-white/45">Ready</div>
+            <div className="text-sm text-app-muted">Ready</div>
           )}
         </div>
       </div>
 
       {running && (
-        <div className="mb-4 text-center text-xs text-white/35">
+        <div className="mb-4 text-center text-xs text-app-muted">
           Cycles: {cycles}
         </div>
       )}
@@ -157,7 +157,7 @@ export default function BreathingExercise({ open, onClose }: Props) {
           <button
             type="button"
             onClick={() => setRunning(false)}
-            className="flex-1 rounded-xl border border-red-500/25 bg-red-500/10 py-3 text-sm font-semibold text-red-300"
+            className="flex-1 rounded-xl border border-red-500/25 bg-red-500/10 py-3 text-sm font-semibold text-app-danger"
           >
             Stop
           </button>
@@ -165,7 +165,7 @@ export default function BreathingExercise({ open, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/50 hover:text-white"
+          className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg"
         >
           Close
         </button>

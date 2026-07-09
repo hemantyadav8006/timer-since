@@ -39,7 +39,7 @@ export default function ExportDialog({ open, onClose }: ExportDialogProps) {
 
   return (
     <ModalBackdrop open={open} onClose={onClose} maxWidth="max-w-xs">
-      <h2 className="mb-4 text-center text-lg font-bold text-white/90">
+      <h2 className="mb-4 text-center text-lg font-bold text-app-fg">
         Export Data
       </h2>
       <div className="space-y-3">
@@ -47,7 +47,7 @@ export default function ExportDialog({ open, onClose }: ExportDialogProps) {
           type="button"
           onClick={() => handleExport("json")}
           disabled={exporting}
-          className="w-full rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm font-medium text-white/70 transition hover:bg-white/6 disabled:opacity-50"
+          className="w-full rounded-xl border border-app-border bg-app-surface px-4 py-3 text-sm font-medium text-app-fg transition hover:bg-app-surface-strong disabled:opacity-50"
         >
           Export JSON
         </button>
@@ -55,7 +55,7 @@ export default function ExportDialog({ open, onClose }: ExportDialogProps) {
           type="button"
           onClick={() => handleExport("csv")}
           disabled={exporting}
-          className="w-full rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm font-medium text-white/70 transition hover:bg-white/6 disabled:opacity-50"
+          className="w-full rounded-xl border border-app-border bg-app-surface px-4 py-3 text-sm font-medium text-app-fg transition hover:bg-app-surface-strong disabled:opacity-50"
         >
           Export CSV
         </button>
@@ -63,7 +63,7 @@ export default function ExportDialog({ open, onClose }: ExportDialogProps) {
       <button
         type="button"
         onClick={onClose}
-        className="mt-4 w-full rounded-xl py-2 text-sm text-white/40 hover:text-white/70"
+        className="mt-4 w-full rounded-xl py-2 text-sm text-app-muted hover:text-app-fg"
       >
         Cancel
       </button>
