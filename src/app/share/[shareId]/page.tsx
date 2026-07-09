@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import ECGLine from "@/app/components/ECGLine";
+import { motion, AnimatePresence } from "framer-motion";
+import AppBackground from "@/components/ui/AppBackground";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import MilestoneBadges from "@/app/components/MilestoneBadges";
 import { fetchSharedTimer } from "@/lib/api/timers";
@@ -31,53 +32,71 @@ export default function SharedTimerPage({
   const noop = () => {};
 
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-app-bg px-4 text-app-fg">
-      <ECGLine />
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 20%, var(--app-accent-glow), transparent 55%)",
-        }}
-      />
-
+    <AppBackground centered className="px-4">
       <main className="relative z-10 w-full max-w-2xl py-8 md:py-12">
-        {error ? (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center md:p-8">
-            <div className="text-base text-red-500 md:text-lg">{error}</div>
-          </div>
-        ) : !timer ? (
-          <div className="text-center text-app-muted">Loading shared timer...</div>
-        ) : (
-          <div className="space-y-4 md:space-y-6">
-            <div className="rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md md:p-6">
-              <TimerDisplay
-                timer={timer}
-                now={now}
-                onStop={noop}
-                onResync={noop}
-                onDelete={noop}
-                onShare={noop}
-                onEdit={noop}
-                onDuplicate={noop}
-                onToggleFavorite={noop}
-                onTogglePin={noop}
-                onArchive={noop}
-              />
-            </div>
-
-            {timer.mode === "elapsed" && (
-              <div className="rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md">
-                <MilestoneBadges timer={timer} elapsedMs={elapsedMs} />
+        <AnimatePresence mode="wait">
+          {error ? (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="auth-card-glow rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center backdrop-blur-md md:p-8"
+            >
+              <div className="text-base text-red-500 md:text-lg">{error}</div>
+            </motion.div>
+          ) : !timer ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center gap-4 py-16 text-center"
+            >
+              <div className="h-10 w-10 animate-shimmer rounded-full border border-app-border" />
+              <p className="text-sm text-app-muted">Loading shared timer...</p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="timer"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              className="space-y-4 md:space-y-6"
+            >
+              <div className="auth-card-glow rounded-2xl border border-app-border bg-app-surface/90 p-4 backdrop-blur-xl md:p-6">
+                <TimerDisplay
+                  timer={timer}
+                  now={now}
+                  onStop={noop}
+                  onResync={noop}
+                  onDelete={noop}
+                  onShare={noop}
+                  onEdit={noop}
+                  onDuplicate={noop}
+                  onToggleFavorite={noop}
+                  onTogglePin={noop}
+                  onArchive={noop}
+                />
               </div>
-            )}
 
-            <div className="text-center text-xs text-app-muted">
-              Shared timer &middot; Read only
-            </div>
-          </div>
-        )}
+              {timer.mode === "elapsed" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="auth-card-glow rounded-2xl border border-app-border bg-app-surface/90 p-4 backdrop-blur-xl"
+                >
+                  <MilestoneBadges timer={timer} elapsedMs={elapsedMs} />
+                </motion.div>
+              )}
+
+              <p className="text-center text-xs text-app-muted">
+                Shared timer &middot; Read only
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
-    </div>
+    </AppBackground>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { useTimerTick } from "@/hooks/useTimerTick";
 import { computeElapsedMs } from "@/types/timer";
 import type { TimerItem } from "@/types/timer";
-import { useState } from "react";
 import TimerDisplay from "./TimerDisplay";
 import MilestoneBadges from "./MilestoneBadges";
 import MilestoneManager from "./MilestoneManager";
@@ -26,6 +27,15 @@ type TimerFocusViewProps = {
   onTimerUpdated: (timer: TimerItem) => void;
 };
 
+const panelVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+  }),
+};
+
 export default function TimerFocusView({
   timer,
   onBack,
@@ -46,15 +56,24 @@ export default function TimerFocusView({
 
   return (
     <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pb-8 md:px-6">
-      <button
+      <motion.button
         type="button"
         onClick={onBack}
-        className="mb-4 flex items-center gap-2 text-sm text-app-muted hover:text-app-fg"
+        initial={{ opacity: 0, x: -8 }}
+        animate={{ opacity: 1, x: 0 }}
+        whileHover={{ x: -4 }}
+        className="mb-4 flex items-center gap-2 text-sm text-app-muted transition hover:text-app-fg"
       >
         &larr; Dashboard
-      </button>
+      </motion.button>
 
-      <div className="rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md md:p-7">
+      <motion.div
+        custom={0}
+        variants={panelVariants}
+        initial="hidden"
+        animate="visible"
+        className="auth-card-glow rounded-2xl border border-app-border bg-app-surface/90 p-4 backdrop-blur-xl md:p-7"
+      >
         <TimerDisplay
           timer={timer}
           now={now}
@@ -68,23 +87,36 @@ export default function TimerFocusView({
           onTogglePin={onTogglePin}
           onArchive={onArchive}
         />
-      </div>
+      </motion.div>
 
-      <div className="mt-4">
+      <motion.div
+        custom={1}
+        variants={panelVariants}
+        initial="hidden"
+        animate="visible"
+        className="mt-4"
+      >
         <SoundPicker sound={timer.sound} color={timer.color} />
-      </div>
+      </motion.div>
 
       {timer.mode === "elapsed" && (
-        <div className="mt-4 rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md">
+        <motion.div
+          custom={2}
+          variants={panelVariants}
+          initial="hidden"
+          animate="visible"
+          className="mt-4 rounded-2xl border border-app-border bg-app-surface/90 p-4 backdrop-blur-xl"
+        >
           <MilestoneBadges timer={timer} elapsedMs={elapsedMs} />
-          <button
+          <motion.button
             type="button"
             onClick={() => setMilestoneManagerOpen(true)}
-            className="mt-3 w-full rounded-lg border border-app-border py-2 text-xs text-app-muted hover:text-app-fg"
+            whileTap={{ scale: 0.98 }}
+            className="mt-3 w-full rounded-lg border border-app-border py-2 text-xs text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg"
           >
             Manage Milestones
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       )}
       <MilestoneManager
         open={milestoneManagerOpen}
@@ -94,16 +126,24 @@ export default function TimerFocusView({
       />
 
       {timer.streaks.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-app-border bg-app-surface p-4 backdrop-blur-md">
+        <motion.div
+          custom={3}
+          variants={panelVariants}
+          initial="hidden"
+          animate="visible"
+          className="mt-4 rounded-2xl border border-app-border bg-app-surface/90 p-4 backdrop-blur-xl"
+        >
           <StreakHeatmap
             streaks={timer.streaks}
             currentStreakMs={elapsedMs}
             color={timer.color}
           />
-        </div>
+        </motion.div>
       )}
 
-      <EntriesPanel timerId={timer._id} color={timer.color} />
+      <motion.div custom={4} variants={panelVariants} initial="hidden" animate="visible">
+        <EntriesPanel timerId={timer._id} color={timer.color} />
+      </motion.div>
     </div>
   );
 }

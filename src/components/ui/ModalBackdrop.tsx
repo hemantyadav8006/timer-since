@@ -38,19 +38,19 @@ export default function ModalBackdrop({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-(--app-overlay) p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-(--app-overlay) p-0 backdrop-blur-md sm:items-center sm:p-4"
           onClick={onClose}
           role="dialog"
           aria-modal="true"
         >
           <motion.div
-            initial={{ scale: 0.96, opacity: 0, y: 16 }}
+            initial={{ scale: 0.92, opacity: 0, y: 24 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.96, opacity: 0, y: 16 }}
-            transition={{ duration: 0.15 }}
+            exit={{ scale: 0.94, opacity: 0, y: 16 }}
+            transition={{ type: "spring", stiffness: 380, damping: 32 }}
             onClick={(e) => e.stopPropagation()}
-            className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-app-border bg-(--app-modal-bg) p-5 shadow-2xl backdrop-blur-md sm:max-h-[85vh] sm:rounded-2xl sm:p-6 ${maxWidth}`}
+            className={`auth-card-glow max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-app-border bg-(--app-modal-bg) p-5 shadow-2xl backdrop-blur-xl sm:max-h-[85vh] sm:rounded-2xl sm:p-6 ${maxWidth}`}
           >
             {children}
           </motion.div>

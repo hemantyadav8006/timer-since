@@ -96,7 +96,7 @@ export default function OtpInput({
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}
-            className={`h-12 w-10 rounded-xl border bg-app-input text-center text-lg font-semibold text-app-fg outline-none transition sm:h-14 sm:w-12 sm:text-xl ${
+            className={`h-12 w-10 rounded-xl border bg-app-input/90 text-center text-lg font-semibold text-app-fg outline-none backdrop-blur-sm transition sm:h-14 sm:w-12 sm:text-xl ${
               focusedIndex === index
                 ? "border-app-fg/40 ring-2 ring-(--app-accent)/30"
                 : "border-app-border"

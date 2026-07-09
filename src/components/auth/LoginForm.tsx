@@ -102,7 +102,7 @@ export default function LoginForm() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required={!isLogin}
-                      className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
+                      className="auth-input"
                       autoComplete="name"
                     />
                   </motion.div>
@@ -117,7 +117,7 @@ export default function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
+                  className="auth-input"
                   autoComplete="email"
                 />
               </div>
@@ -139,7 +139,7 @@ export default function LoginForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
+                  className="auth-input"
                   autoComplete={isLogin ? "current-password" : "new-password"}
                 />
               </div>

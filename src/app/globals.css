@@ -79,6 +79,99 @@ body {
   animation: glow-pulse 3.2s ease-in-out infinite;
 }
 
+/* Floating geometric shapes */
+@keyframes shape-float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-14px) translateX(6px);
+  }
+}
+
+@keyframes shape-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shape-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--app-surface) 0%,
+    color-mix(in srgb, var(--app-surface-strong) 80%, var(--app-fg)) 50%,
+    var(--app-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.bg-auth-mesh {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 20% 40%,
+      color-mix(in srgb, var(--app-accent-glow) 60%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 80% 70%,
+      color-mix(in srgb, var(--app-accent-glow) 40%, transparent),
+      transparent
+    );
+}
+
+.auth-card-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--app-border) 80%, transparent),
+    0 24px 48px -12px rgba(0, 0, 0, 0.35),
+    0 0 60px color-mix(in srgb, var(--app-accent-glow) 120%, transparent);
+}
+
+.auth-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-input-bg) 92%, transparent);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--app-fg);
+  outline: none;
+  backdrop-filter: blur(8px);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.auth-input:focus {
+  border-color: color-mix(in srgb, var(--app-fg) 25%, transparent);
+  box-shadow: 0 0 0 3px var(--app-accent-glow);
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -98,8 +191,15 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-glow-pulse {
+  .animate-glow-pulse,
+  .animate-shimmer {
     animation: none;
+  }
+
+  [style*="shape-float"],
+  [style*="shape-rotate"],
+  [style*="shape-pulse"] {
+    animation: none !important;
   }
 
   * {

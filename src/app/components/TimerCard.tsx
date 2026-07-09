@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import { motion } from "framer-motion";
 import { formatElapsed, formatCountdown, pad2 } from "@/lib/utils";
 import { getEffectiveNow, isCountdownComplete } from "@/types/timer";
 import type { TimerItem, ElapsedTime } from "@/types/timer";
@@ -21,6 +22,12 @@ function formatTimeString(e: ElapsedTime): string {
   return parts.join(" ");
 }
 
+const cardMotion = {
+  whileHover: { y: -3, scale: 1.01 },
+  whileTap: { scale: 0.98 },
+  transition: { type: "spring" as const, stiffness: 400, damping: 28 },
+};
+
 export default memo(function TimerCard({
   timer,
   onClick,
@@ -40,13 +47,13 @@ export default memo(function TimerCard({
   const done = isCountdownComplete(timer, now);
   const timeStr = formatTimeString(elapsed);
 
-  // ── Compact variant ───────────────────────────────────
   if (variant === "compact") {
     return (
-      <button
+      <motion.button
         type="button"
         onClick={onClick}
-        className="flex items-center gap-3 rounded-xl border border-app-border bg-app-surface px-3 py-2 text-left transition hover:bg-app-surface-strong"
+        {...cardMotion}
+        className="flex w-full items-center gap-3 rounded-xl border border-app-border bg-app-surface/90 px-3 py-2 text-left backdrop-blur-sm transition-colors hover:border-app-fg/15 hover:bg-app-surface-strong"
       >
         <span className="text-base">{timer.icon}</span>
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-app-fg">
@@ -60,17 +67,17 @@ export default memo(function TimerCard({
         </span>
         {timer.pinned && <span className="text-[10px]">📌</span>}
         {timer.favorite && <span className="text-[10px]">⭐</span>}
-      </button>
+      </motion.button>
     );
   }
 
-  // ── List variant ──────────────────────────────────────
   if (variant === "list") {
     return (
-      <button
+      <motion.button
         type="button"
         onClick={onClick}
-        className="flex w-full items-center gap-4 rounded-xl border border-app-border bg-app-surface px-4 py-3 text-left transition hover:bg-app-surface-strong"
+        {...cardMotion}
+        className="flex w-full items-center gap-4 rounded-xl border border-app-border bg-app-surface/90 px-4 py-3 text-left backdrop-blur-sm transition-colors hover:border-app-fg/15 hover:bg-app-surface-strong"
       >
         <span className="text-2xl">{timer.icon}</span>
         <div className="min-w-0 flex-1">
@@ -104,21 +111,34 @@ export default memo(function TimerCard({
             Paused
           </span>
         )}
-      </button>
+      </motion.button>
     );
   }
 
-  // ── Grid variant (default) ────────────────────────────
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
-      className="group flex flex-col gap-3 rounded-2xl border border-app-border bg-app-surface p-5 text-left transition hover:bg-app-surface-strong"
-      style={{ borderColor: `${timer.color}15` }}
+      {...cardMotion}
+      className="group flex w-full flex-col gap-3 rounded-2xl border border-app-border bg-app-surface/90 p-5 text-left backdrop-blur-sm transition-colors hover:bg-app-surface-strong"
+      style={{
+        borderColor: `${timer.color}18`,
+        boxShadow: `0 0 0 0 ${timer.color}00`,
+      }}
+      whileHover={{
+        ...cardMotion.whileHover,
+        boxShadow: `0 8px 32px -8px ${timer.color}30`,
+      }}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">{timer.icon}</span>
+          <motion.span
+            className="text-xl"
+            whileHover={{ scale: 1.15, rotate: [0, -8, 8, 0] }}
+            transition={{ duration: 0.35 }}
+          >
+            {timer.icon}
+          </motion.span>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <span className="truncate text-sm font-semibold text-app-fg">
@@ -144,7 +164,7 @@ export default memo(function TimerCard({
       )}
 
       <div
-        className="rounded-xl px-4 py-3 text-center font-mono text-lg font-semibold"
+        className="rounded-xl px-4 py-3 text-center font-mono text-lg font-semibold transition-shadow group-hover:shadow-inner"
         style={{
           backgroundColor: `${timer.color}08`,
           border: `1px solid ${timer.color}15`,
@@ -171,6 +191,6 @@ export default memo(function TimerCard({
           </div>
         )}
       </div>
-    </button>
+    </motion.button>
   );
 });

@@ -108,7 +108,7 @@ export default function ForgotPasswordForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 md:py-2.5"
+                  className="auth-input"
                   autoComplete="email"
                 />
               </div>

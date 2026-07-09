@@ -14,6 +14,7 @@ import { isSessionExpiredError } from "@/lib/api/http";
 import { useToast } from "@/components/ui/Toast";
 import type { TimerItem, SortOption, UpdateTimerPayload } from "@/types/timer";
 import EmptyState from "@/components/ui/EmptyState";
+import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import Confetti from "@/components/ui/Confetti";
 import Header from "./Header";
@@ -303,9 +304,13 @@ export default function Dashboard() {
       <div className="relative z-10 flex-1 px-4 pb-8 md:px-6">
         {/* Quick stats bar */}
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-app-muted md:gap-3">
-          <span>
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            key={total}
+          >
             {total} timer{total !== 1 ? "s" : ""}
-          </span>
+          </motion.span>
           {stats.pinned.length > 0 && (
             <span>📌 {stats.pinned.length} pinned</span>
           )}
@@ -320,38 +325,43 @@ export default function Dashboard() {
         {/* Actions + Filters — mobile-first stack */}
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:flex md:flex-wrap md:gap-3">
-            <button
+            <motion.button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="col-span-2 rounded-xl px-4 py-3 text-sm font-semibold text-black transition active:scale-[0.98] sm:col-span-1 md:px-5 md:py-2.5"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              className="col-span-2 rounded-xl px-4 py-3 text-sm font-semibold text-black transition sm:col-span-1 md:px-5 md:py-2.5"
               style={{
                 backgroundColor: theme.primary,
                 boxShadow: `0 0 20px ${theme.glow}`,
               }}
             >
               + Create Timer
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={() => setAnalyticsOpen(true)}
-              className="rounded-xl border border-app-border bg-app-surface px-3 py-3 text-sm text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
+              whileTap={{ scale: 0.97 }}
+              className="rounded-xl border border-app-border bg-app-surface/90 px-3 py-3 text-sm text-app-muted backdrop-blur-sm transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
             >
               Analytics
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={() => setBreathingOpen(true)}
-              className="rounded-xl border border-app-border bg-app-surface px-3 py-3 text-sm text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
+              whileTap={{ scale: 0.97 }}
+              className="rounded-xl border border-app-border bg-app-surface/90 px-3 py-3 text-sm text-app-muted backdrop-blur-sm transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
             >
               Breathing
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               type="button"
               onClick={() => setExportOpen(true)}
-              className="rounded-xl border border-app-border bg-app-surface px-3 py-3 text-sm text-app-muted transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
+              whileTap={{ scale: 0.97 }}
+              className="rounded-xl border border-app-border bg-app-surface/90 px-3 py-3 text-sm text-app-muted backdrop-blur-sm transition hover:bg-app-surface-strong hover:text-app-fg md:px-4 md:py-2.5"
             >
               Export
-            </button>
+            </motion.button>
           </div>
 
           <div className="w-full md:ml-auto md:w-auto">
@@ -372,7 +382,9 @@ export default function Dashboard() {
 
         {/* Timer grid/list */}
         {loading ? (
-          <div className="py-16 text-center text-app-muted md:py-20">Loading...</div>
+          <LoadingSkeleton
+            variant={viewMode === "list" || viewMode === "compact" ? "list" : "grid"}
+          />
         ) : timers.length === 0 ? (
           debouncedSearch ? (
             <EmptyState
@@ -418,10 +430,10 @@ export default function Dashboard() {
                 <motion.div
                   key={timer._id}
                   layout
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.97 }}
-                  transition={{ duration: 0.15 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 >
                   <TimerCard
                     timer={timer}
