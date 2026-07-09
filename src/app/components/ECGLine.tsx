@@ -3,13 +3,8 @@
 import { useEffect, useRef } from "react";
 
 /* ──────────────────────────────────────────────────────────
- *  ECGLine — full-screen canvas background that draws a
- *  continuous heartbeat monitor sweep with:
- *    • Realistic PQRST waveform shape
- *    • Smooth phosphor glow + afterglow fade trail
- *    • A bright sweep head dot
- *    • Faint medical-style grid in the background
- *  Runs entirely on rAF — zero framer-motion overhead.
+ *  ECGLine — hospital-monitor style background with 3 stacked
+ *  waveform traces (ECG leads + pleth) sharing one sweep head.
  * ────────────────────────────────────────────────────────── */
 
 // ── PQRST waveform definition ────────────────────────────
@@ -70,32 +65,79 @@ function buildBeatPath(): { x: number; y: number }[] {
 const BEAT_POINTS = buildBeatPath();
 const BEAT_WIDTH = BEAT_POINTS[BEAT_POINTS.length - 1].x;
 
-/** Interpolate the waveform at arbitrary x within one beat. */
-function sampleBeat(xInBeat: number): number {
-  if (xInBeat <= 0) return BEAT_POINTS[0].y;
-  if (xInBeat >= BEAT_WIDTH) return BEAT_POINTS[BEAT_POINTS.length - 1].y;
+function buildPlethPath(): { x: number; y: number }[] {
+  const raw: [number, number][] = [
+    [0, 0],
+    [18, 0],
+    [10, -6],
+    [8, -22],
+    [10, -28],
+    [14, -18],
+    [18, -6],
+    [22, -1],
+    [30, 0],
+    [42, 0],
+  ];
 
-  for (let i = 1; i < BEAT_POINTS.length; i++) {
-    const prev = BEAT_POINTS[i - 1];
-    const cur = BEAT_POINTS[i];
-    if (xInBeat <= cur.x) {
-      const t = (xInBeat - prev.x) / (cur.x - prev.x);
-      // Smooth cubic interpolation for natural curves
-      const tSmooth = t * t * (3 - 2 * t);
-      return prev.y + (cur.y - prev.y) * tSmooth;
-    }
+  const points: { x: number; y: number }[] = [];
+  let cx = 0;
+  let cy = 0;
+  for (const [dx, dy] of raw) {
+    cx += dx;
+    cy += dy;
+    points.push({ x: cx, y: cy });
   }
-
-  return 0;
+  return points;
 }
+
+const PLETH_POINTS = buildPlethPath();
+const PLETH_WIDTH = PLETH_POINTS[PLETH_POINTS.length - 1].x;
+
+function buildWaveSampler(points: { x: number; y: number }[], width: number) {
+  return (xInBeat: number): number => {
+    if (xInBeat <= 0) return points[0].y;
+    if (xInBeat >= width) return points[points.length - 1].y;
+
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const cur = points[i];
+      if (xInBeat <= cur.x) {
+        const t = (xInBeat - prev.x) / (cur.x - prev.x);
+        const tSmooth = t * t * (3 - 2 * t);
+        return prev.y + (cur.y - prev.y) * tSmooth;
+      }
+    }
+
+    return 0;
+  };
+}
+
+const sampleBeat = buildWaveSampler(BEAT_POINTS, BEAT_WIDTH);
+const samplePleth = buildWaveSampler(PLETH_POINTS, PLETH_WIDTH);
 
 // ── Constants ────────────────────────────────────────────
 
 const SWEEP_SPEED = 120; // pixels per second
 const GLOW_COLOR = "0, 255, 136";
-const HEAD_RADIUS = 4;
-const TRAIL_LENGTH = 0.55; // fraction of canvas width that glows behind the head
-const AFTERGLOW_LENGTH = 0.85; // fraction that shows faint trace
+const HEAD_RADIUS = 3;
+const TRAIL_LENGTH = 0.55;
+const AFTERGLOW_LENGTH = 0.85;
+const TRACE_COUNT = 3;
+const LANE_GAP_RATIO = 0.018;
+
+type TraceConfig = {
+  label: string;
+  sample: (x: number) => number;
+  beatWidth: number;
+  amplitude: number;
+  phase: number;
+};
+
+const TRACES: TraceConfig[] = [
+  { label: "II", sample: sampleBeat, beatWidth: BEAT_WIDTH, amplitude: 0.9, phase: 0 },
+  { label: "V", sample: sampleBeat, beatWidth: BEAT_WIDTH, amplitude: 0.7, phase: 48 },
+  { label: "Pleth", sample: samplePleth, beatWidth: PLETH_WIDTH, amplitude: 1, phase: 0 },
+];
 
 // ── Grid renderer ────────────────────────────────────────
 
@@ -136,6 +178,107 @@ function drawGrid(
   ctx.stroke();
 }
 
+function drawTrace(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  sweepX: number,
+  baselineY: number,
+  laneHeight: number,
+  trace: TraceConfig,
+  dpr: number,
+) {
+  const beatWidthPx = trace.beatWidth * dpr;
+  const yScale = (laneHeight / 300) * trace.amplitude;
+  const phasePx = trace.phase * dpr;
+
+  const sampleAt = (px: number) => {
+    const xInBeat = (px + phasePx) % beatWidthPx;
+    return trace.sample(xInBeat / dpr) * yScale;
+  };
+
+  ctx.beginPath();
+  ctx.moveTo(0, baselineY);
+  ctx.lineTo(w, baselineY);
+  ctx.strokeStyle = `rgba(${GLOW_COLOR}, 0.08)`;
+  ctx.lineWidth = 1 * dpr;
+  ctx.stroke();
+
+  for (let pass = 0; pass < 2; pass++) {
+    const step = 2 * dpr;
+
+    for (let px = 0; px < w; px += step) {
+      const py = baselineY + sampleAt(px);
+
+      let dist = sweepX - px;
+      if (dist < 0) dist += w;
+      const frac = dist / w;
+
+      let alpha = 0;
+      if (pass === 0) {
+        if (frac < AFTERGLOW_LENGTH) {
+          alpha = 0.12 * (1 - frac / AFTERGLOW_LENGTH);
+        }
+      } else if (frac < TRAIL_LENGTH) {
+        alpha = 1.0 * Math.pow(1 - frac / TRAIL_LENGTH, 2.2);
+      }
+
+      if (alpha < 0.005) continue;
+
+      const nextPx = px + step;
+      ctx.strokeStyle = `rgba(${GLOW_COLOR}, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = pass === 1 ? 2.4 * dpr : 1.4 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(nextPx, baselineY + sampleAt(nextPx));
+      ctx.stroke();
+    }
+  }
+
+  ctx.save();
+  ctx.shadowColor = `rgba(${GLOW_COLOR}, 0.6)`;
+  ctx.shadowBlur = 14 * dpr;
+  ctx.lineWidth = 2 * dpr;
+
+  const glowTrail = w * 0.12;
+  for (let px = 0; px < w; px += 2 * dpr) {
+    let dist = sweepX - px;
+    if (dist < 0) dist += w;
+    if (dist > glowTrail) continue;
+
+    const alpha = Math.pow(1 - dist / glowTrail, 1.8);
+    ctx.strokeStyle = `rgba(${GLOW_COLOR}, ${alpha.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.moveTo(px, baselineY + sampleAt(px));
+    const nextPx = px + 2 * dpr;
+    ctx.lineTo(nextPx, baselineY + sampleAt(nextPx));
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const headSample = sampleAt(sweepX);
+  const headY = baselineY + headSample;
+  const r = HEAD_RADIUS * dpr;
+
+  ctx.save();
+  ctx.shadowColor = `rgba(${GLOW_COLOR}, 0.9)`;
+  ctx.shadowBlur = 20 * dpr;
+  ctx.beginPath();
+  ctx.arc(sweepX, headY, r * 1.8, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${GLOW_COLOR}, 0.25)`;
+  ctx.fill();
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(sweepX, headY, r, 0, Math.PI * 2);
+  ctx.fillStyle = `rgba(${GLOW_COLOR}, 0.95)`;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(sweepX, headY, r * 0.4, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.fill();
+}
+
 // ── Component ────────────────────────────────────────────
 
 export default function ECGLine() {
@@ -154,8 +297,9 @@ export default function ECGLine() {
     let w = 0;
     let h = 0;
     let dpr = 1;
-    let baselineY = 0;
-    let yScale = 1;
+    let laneHeight = 0;
+    let laneGap = 0;
+    let laneBaselines: number[] = [];
 
     function resize() {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -164,16 +308,30 @@ export default function ECGLine() {
       h = rect.height * dpr;
       canvas!.width = w;
       canvas!.height = h;
-      baselineY = h * 0.52;
-      yScale = h / 280;
 
-      // Re-cache grid
+      laneGap = h * LANE_GAP_RATIO;
+      laneHeight = (h - laneGap * (TRACE_COUNT - 1)) / TRACE_COUNT;
+      laneBaselines = TRACES.map((_, i) => {
+        const laneTop = i * (laneHeight + laneGap);
+        return laneTop + laneHeight * 0.58;
+      });
+
       const gridCanvas = document.createElement("canvas");
       gridCanvas.width = w;
       gridCanvas.height = h;
       const gridCtx = gridCanvas.getContext("2d");
       if (gridCtx) {
         drawGrid(gridCtx, w, h, dpr);
+
+        gridCtx.strokeStyle = `rgba(${GLOW_COLOR}, 0.12)`;
+        gridCtx.lineWidth = 1 * dpr;
+        for (let i = 1; i < TRACE_COUNT; i++) {
+          const y = i * laneHeight + (i - 1) * laneGap;
+          gridCtx.beginPath();
+          gridCtx.moveTo(0, y);
+          gridCtx.lineTo(w, y);
+          gridCtx.stroke();
+        }
       }
       gridCacheRef.current = gridCanvas;
     }
@@ -238,143 +396,24 @@ export default function ECGLine() {
 
       ctx!.restore();
 
-      // ── Draw waveform ───────────────────────────────────
-      // We draw the full width of the canvas as a repeating waveform,
-      // then apply brightness based on distance from the sweep head.
+      ctx!.font = `${11 * dpr}px ui-monospace, monospace`;
+      ctx!.fillStyle = `rgba(${GLOW_COLOR}, 0.35)`;
+      TRACES.forEach((trace, i) => {
+        const laneTop = i * (laneHeight + laneGap);
+        ctx!.fillText(trace.label, 12 * dpr, laneTop + 18 * dpr);
+      });
 
-      const beatWidthPx = BEAT_WIDTH * dpr;
-
-      for (let pass = 0; pass < 3; pass++) {
-        // pass 0: dim afterglow trace (full path behind head)
-        // pass 1: bright glowing trail
-        // pass 2: baseline reference line
-
-        ctx!.beginPath();
-
-        const step = pass === 2 ? 8 * dpr : 2 * dpr;
-
-        for (let px = 0; px < w; px += step) {
-          const xInBeat = px % beatWidthPx;
-          const sample = sampleBeat(xInBeat / dpr) * yScale;
-          const py = baselineY + sample;
-
-          // Distance from sweep head (wrapping)
-          let dist = sweepX - px;
-          if (dist < 0) dist += w;
-          const frac = dist / w;
-
-          let alpha = 0;
-
-          if (pass === 0) {
-            // Afterglow: everything behind the head, fading
-            if (frac < AFTERGLOW_LENGTH) {
-              alpha = 0.12 * (1 - frac / AFTERGLOW_LENGTH);
-            }
-          } else if (pass === 1) {
-            // Bright trail
-            if (frac < TRAIL_LENGTH) {
-              alpha = 1.0 * Math.pow(1 - frac / TRAIL_LENGTH, 2.2);
-            }
-          } else {
-            // Flat baseline
-            alpha = 0.08;
-          }
-
-          if (alpha < 0.005) continue;
-
-          if (pass === 2) {
-            // Baseline is just a horizontal line
-            if (px === 0) {
-              ctx!.moveTo(0, baselineY);
-            } else {
-              ctx!.lineTo(px, baselineY);
-            }
-          } else {
-            // Draw tiny segments with per-segment alpha
-            const nextPx = px + step;
-            const nextXInBeat = nextPx % beatWidthPx;
-            const nextSample = sampleBeat(nextXInBeat / dpr) * yScale;
-            const nextPy = baselineY + nextSample;
-
-            ctx!.strokeStyle = `rgba(${GLOW_COLOR}, ${alpha.toFixed(3)})`;
-            ctx!.lineWidth = pass === 1 ? 2.8 * dpr : 1.5 * dpr;
-            ctx!.beginPath();
-            ctx!.moveTo(px, py);
-            ctx!.lineTo(nextPx, nextPy);
-            ctx!.stroke();
-          }
-        }
-
-        if (pass === 2) {
-          ctx!.strokeStyle = `rgba(${GLOW_COLOR}, 0.08)`;
-          ctx!.lineWidth = 1 * dpr;
-          ctx!.stroke();
-        }
-      }
-
-      // ── Glow layer: re-draw bright section with shadow ──
-      {
-        ctx!.save();
-        ctx!.shadowColor = `rgba(${GLOW_COLOR}, 0.6)`;
-        ctx!.shadowBlur = 16 * dpr;
-        ctx!.lineWidth = 2.2 * dpr;
-
-        const glowTrail = w * 0.12; // only the very tip glows intensely
-        ctx!.beginPath();
-
-        for (let px = 0; px < w; px += 2 * dpr) {
-          let dist = sweepX - px;
-          if (dist < 0) dist += w;
-          if (dist > glowTrail) continue;
-
-          const xInBeat = px % beatWidthPx;
-          const sample = sampleBeat(xInBeat / dpr) * yScale;
-          const py = baselineY + sample;
-
-          const alpha = Math.pow(1 - dist / glowTrail, 1.8);
-          ctx!.strokeStyle = `rgba(${GLOW_COLOR}, ${alpha.toFixed(3)})`;
-          ctx!.beginPath();
-          ctx!.moveTo(px, py);
-
-          const nextPx = px + 2 * dpr;
-          const nextXInBeat = nextPx % beatWidthPx;
-          const nextSample = sampleBeat(nextXInBeat / dpr) * yScale;
-          ctx!.lineTo(nextPx, baselineY + nextSample);
-          ctx!.stroke();
-        }
-
-        ctx!.restore();
-      }
-
-      // ── Sweep head dot ──────────────────────────────────
-      {
-        const headXInBeat = sweepX % beatWidthPx;
-        const headSample = sampleBeat(headXInBeat / dpr) * yScale;
-        const headY = baselineY + headSample;
-        const r = HEAD_RADIUS * dpr;
-
-        // Outer glow
-        ctx!.save();
-        ctx!.shadowColor = `rgba(${GLOW_COLOR}, 0.9)`;
-        ctx!.shadowBlur = 24 * dpr;
-        ctx!.beginPath();
-        ctx!.arc(sweepX, headY, r * 1.8, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(${GLOW_COLOR}, 0.25)`;
-        ctx!.fill();
-        ctx!.restore();
-
-        // Inner bright dot
-        ctx!.beginPath();
-        ctx!.arc(sweepX, headY, r, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(${GLOW_COLOR}, 0.95)`;
-        ctx!.fill();
-
-        // White-hot center
-        ctx!.beginPath();
-        ctx!.arc(sweepX, headY, r * 0.4, 0, Math.PI * 2);
-        ctx!.fillStyle = "rgba(255, 255, 255, 0.9)";
-        ctx!.fill();
-      }
+      TRACES.forEach((trace, i) => {
+        drawTrace(
+          ctx!,
+          w,
+          sweepX,
+          laneBaselines[i],
+          laneHeight,
+          trace,
+          dpr,
+        );
+      });
 
       // ── Dark wipe zone ahead of sweep ───────────────────
       // Creates the classic "eraser" look ahead of the head
@@ -408,7 +447,7 @@ export default function ECGLine() {
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none absolute inset-0 h-full w-full opacity-50"
+      className="pointer-events-none absolute inset-0 h-full w-full opacity-55"
       aria-hidden="true"
     />
   );
