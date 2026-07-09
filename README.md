@@ -124,12 +124,12 @@ src/
 ├── hooks/             # useTimerTick, useDebounce, useLocalStorage
 ├── lib/               # Auth, MongoDB, API clients, utilities
 ├── models/            # Mongoose models (User, Timer, Entry)
-└── middleware.ts      # Route protection & session checks
+└── proxy.ts           # Route protection & session checks (network proxy)
 ```
 
 ## Auth Flow
 
-1. Unauthenticated users are redirected to `/login` by middleware and client-side route guards.
+1. Unauthenticated users are redirected to `/login` by the proxy layer and client-side route guards.
 2. **Signup** creates an account and emails a 6-digit verification code. Users verify at `/verify-email` before accessing the app.
 3. **Login** requires a verified email. Unverified users are redirected to `/verify-email`.
 4. **Forgot password** sends a reset code via email; users set a new password at `/reset-password`.
