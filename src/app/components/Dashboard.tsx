@@ -118,6 +118,15 @@ export default function Dashboard() {
     [timers, selectedId],
   );
 
+  const stats = useMemo(() => {
+    const pinned = timers.filter((t) => t.pinned);
+    const favorites = timers.filter((t) => t.favorite);
+    const countdowns = timers.filter(
+      (t) => t.mode === "countdown" && !t.archived,
+    );
+    return { pinned, favorites, countdowns };
+  }, [timers]);
+
   // ── CRUD handlers ─────────────────────────────────────
   const handleCreated = useCallback(
     (timer: TimerItem) => {
@@ -257,17 +266,7 @@ export default function Dashboard() {
     );
   }
 
-  // ── Dashboard stats ───────────────────────────────────
-  const stats = useMemo(() => {
-    const pinned = timers.filter((t) => t.pinned);
-    const favorites = timers.filter((t) => t.favorite);
-    const countdowns = timers.filter(
-      (t) => t.mode === "countdown" && !t.archived,
-    );
-    return { pinned, favorites, countdowns };
-  }, [timers]);
-
-  // ── Dashboard view ────────────────────────────────────
+  // ── Focus view ────────────────────────────────────────
   return (
     <>
       <Header
