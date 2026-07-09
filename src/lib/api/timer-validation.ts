@@ -29,7 +29,10 @@ export function validateTimerFields(
 ): NextResponse | null {
   if (fields.title !== undefined) {
     if (typeof fields.title !== "string" || fields.title.trim().length === 0) {
-      return NextResponse.json({ error: "Title cannot be empty." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Title cannot be empty." },
+        { status: 400 },
+      );
     }
     if (fields.title.trim().length > 120) {
       return NextResponse.json(
@@ -38,7 +41,10 @@ export function validateTimerFields(
       );
     }
   } else if (opts.isCreate) {
-    return NextResponse.json({ error: "Timer title is required." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Timer title is required." },
+      { status: 400 },
+    );
   }
 
   if (
@@ -111,7 +117,10 @@ export function validateTimerFields(
     }
   }
 
-  if (fields.description !== undefined && typeof fields.description === "string") {
+  if (
+    fields.description !== undefined &&
+    typeof fields.description === "string"
+  ) {
     if (fields.description.length > 500) {
       return NextResponse.json(
         { error: "Description must be 500 characters or fewer." },

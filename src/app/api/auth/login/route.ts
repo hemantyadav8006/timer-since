@@ -59,9 +59,6 @@ export async function POST(req: Request) {
       { status: 200 },
     );
   } catch {
-    return NextResponse.json(
-      { error: "Failed to log in." },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to log in." }, { status: 500 });
   }
 }

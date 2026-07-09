@@ -91,7 +91,12 @@ export default function VerifyEmailForm() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.15 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.15,
+            }}
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
             style={{
               backgroundColor: `${theme.primary}22`,
@@ -103,9 +108,7 @@ export default function VerifyEmailForm() {
           <h1 className="mb-1 text-xl font-bold text-app-fg md:text-2xl">
             Check your email
           </h1>
-          <p className="text-sm text-app-muted">
-            We sent a 6-digit code to
-          </p>
+          <p className="text-sm text-app-muted">We sent a 6-digit code to</p>
           {email && (
             <p className="mt-1 text-sm font-medium text-app-fg">{email}</p>
           )}

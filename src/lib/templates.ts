@@ -59,10 +59,22 @@ export const TEMPLATES: TemplateConfig[] = [
     defaultName: "Baby's Age",
     milestones: [
       { label: "First Smile (~6 weeks)", durationMs: 42 * MS.day, icon: "😊" },
-      { label: "First Laugh (~4 months)", durationMs: 120 * MS.day, icon: "😂" },
-      { label: "First Tooth (~6 months)", durationMs: 180 * MS.day, icon: "🦷" },
+      {
+        label: "First Laugh (~4 months)",
+        durationMs: 120 * MS.day,
+        icon: "😂",
+      },
+      {
+        label: "First Tooth (~6 months)",
+        durationMs: 180 * MS.day,
+        icon: "🦷",
+      },
       { label: "Crawling (~8 months)", durationMs: 240 * MS.day, icon: "🐛" },
-      { label: "First Steps (~12 months)", durationMs: 365 * MS.day, icon: "👣" },
+      {
+        label: "First Steps (~12 months)",
+        durationMs: 365 * MS.day,
+        icon: "👣",
+      },
     ],
   },
   {
@@ -142,9 +154,21 @@ export const TEMPLATES: TemplateConfig[] = [
     defaultSound: "none",
     defaultName: "Smoke-Free Since",
     milestones: [
-      { label: "20 min: Heart rate normalizes", durationMs: 20 * MS.minute, icon: "❤️" },
-      { label: "48 hours: Nerves regenerate", durationMs: 48 * MS.hour, icon: "⚡" },
-      { label: "2 weeks: Circulation improves", durationMs: 14 * MS.day, icon: "🩸" },
+      {
+        label: "20 min: Heart rate normalizes",
+        durationMs: 20 * MS.minute,
+        icon: "❤️",
+      },
+      {
+        label: "48 hours: Nerves regenerate",
+        durationMs: 48 * MS.hour,
+        icon: "⚡",
+      },
+      {
+        label: "2 weeks: Circulation improves",
+        durationMs: 14 * MS.day,
+        icon: "🩸",
+      },
       { label: "1 year: Heart risk halved", durationMs: MS.year, icon: "🏆" },
     ],
   },
@@ -212,5 +236,7 @@ export const TEMPLATES: TemplateConfig[] = [
 ];
 
 export function getTemplate(name: string): TemplateConfig {
-  return TEMPLATES.find((t) => t.name === name) ?? TEMPLATES[TEMPLATES.length - 1];
+  return (
+    TEMPLATES.find((t) => t.name === name) ?? TEMPLATES[TEMPLATES.length - 1]
+  );
 }

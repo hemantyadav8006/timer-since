@@ -65,13 +65,10 @@ export async function login(
   });
   const data = (await res.json()) as LoginApiResponse;
   if (!res.ok || "error" in data) {
-    throw new AuthApiError(
-      "error" in data ? data.error : "Failed to log in.",
-      {
-        code: "code" in data ? data.code : undefined,
-        email: "email" in data ? data.email : undefined,
-      },
-    );
+    throw new AuthApiError("error" in data ? data.error : "Failed to log in.", {
+      code: "code" in data ? data.code : undefined,
+      email: "email" in data ? data.email : undefined,
+    });
   }
   return data.user;
 }

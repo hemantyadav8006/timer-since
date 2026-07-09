@@ -28,9 +28,7 @@ export default function AppBackground({
   return (
     <div
       className={`relative min-h-dvh overflow-hidden bg-app-bg text-app-fg ${
-        centered
-          ? "flex flex-col items-center justify-center"
-          : "flex flex-col"
+        centered ? "flex flex-col items-center justify-center" : "flex flex-col"
       } ${className}`}
     >
       {showEcg && <ECGLine />}

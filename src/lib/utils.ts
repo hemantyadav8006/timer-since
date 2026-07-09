@@ -85,7 +85,10 @@ export function escapeRegex(input: string): string {
  * Format remaining time for countdown timers.
  * Pass `now` for consistent display when paused or tick-synced.
  */
-export function formatCountdown(targetTime: number, now = Date.now()): ElapsedTime {
+export function formatCountdown(
+  targetTime: number,
+  now = Date.now(),
+): ElapsedTime {
   const remaining = targetTime - now;
   if (remaining <= 0) {
     return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
@@ -145,7 +148,17 @@ export function timersToCSV(
     createdAt?: string;
   }[],
 ): string {
-  const headers = ["Title", "Mode", "Start Date", "Category", "Tags", "Favorite", "Pinned", "Archived", "Created At"];
+  const headers = [
+    "Title",
+    "Mode",
+    "Start Date",
+    "Category",
+    "Tags",
+    "Favorite",
+    "Pinned",
+    "Archived",
+    "Created At",
+  ];
   const rows = timers.map((t) => [
     `"${t.title.replace(/"/g, '""')}"`,
     t.mode,

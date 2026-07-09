@@ -2,13 +2,32 @@ import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { Timer } from "@/models/Timer";
 import { Entry } from "@/models/Entry";
-import { pickFields, requireAuth, requireTimerOwner } from "@/lib/api/middleware";
+import {
+  pickFields,
+  requireAuth,
+  requireTimerOwner,
+} from "@/lib/api/middleware";
 import { validateTimerFields } from "@/lib/api/timer-validation";
 
 const UPDATABLE_FIELDS = [
-  "title", "description", "icon", "color", "category", "tags",
-  "mode", "startDate", "targetDate", "archived", "favorite", "pinned",
-  "stopped", "stoppedAt", "isPublic", "sound", "milestoneConfig", "streaks",
+  "title",
+  "description",
+  "icon",
+  "color",
+  "category",
+  "tags",
+  "mode",
+  "startDate",
+  "targetDate",
+  "archived",
+  "favorite",
+  "pinned",
+  "stopped",
+  "stoppedAt",
+  "isPublic",
+  "sound",
+  "milestoneConfig",
+  "streaks",
 ];
 
 export async function GET(
@@ -74,7 +93,10 @@ export async function PUT(
 
     if (safe.streaks !== undefined) {
       if (!Array.isArray(safe.streaks)) {
-        return NextResponse.json({ error: "Invalid streaks." }, { status: 400 });
+        return NextResponse.json(
+          { error: "Invalid streaks." },
+          { status: 400 },
+        );
       }
       for (const s of safe.streaks) {
         if (
@@ -84,7 +106,10 @@ export async function PUT(
           typeof s.endTime !== "number" ||
           typeof s.duration !== "number"
         ) {
-          return NextResponse.json({ error: "Invalid streak record." }, { status: 400 });
+          return NextResponse.json(
+            { error: "Invalid streak record." },
+            { status: 400 },
+          );
         }
       }
     }

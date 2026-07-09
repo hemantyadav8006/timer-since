@@ -152,7 +152,9 @@ export default memo(function TimerDisplay({
         }`}
         style={{
           borderColor: done ? `${timer.color}35` : `${timer.color}15`,
-          boxShadow: done ? `0 0 50px ${timer.color}15` : `0 0 50px ${timer.color}08`,
+          boxShadow: done
+            ? `0 0 50px ${timer.color}15`
+            : `0 0 50px ${timer.color}08`,
         }}
       >
         <div

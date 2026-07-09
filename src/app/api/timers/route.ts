@@ -109,7 +109,12 @@ export async function POST(req: Request) {
       icon: (icon ?? "⏱️").slice(0, 8),
       color: color ?? "#00FF88",
       category,
-      tags: Array.isArray(tags) ? tags.map((t: string) => t.trim()).filter(Boolean).slice(0, 20) : [],
+      tags: Array.isArray(tags)
+        ? tags
+            .map((t: string) => t.trim())
+            .filter(Boolean)
+            .slice(0, 20)
+        : [],
       mode,
       startDate: mode === "elapsed" ? startDate : (startDate ?? Date.now()),
       targetDate: mode === "countdown" ? (targetDate ?? startDate) : null,
@@ -121,7 +126,10 @@ export async function POST(req: Request) {
       favorite: false,
       pinned: false,
       streaks: [],
-      milestoneConfig: milestoneConfig ?? { enabled: true, customMilestones: [] },
+      milestoneConfig: milestoneConfig ?? {
+        enabled: true,
+        customMilestones: [],
+      },
       sound,
     });
 

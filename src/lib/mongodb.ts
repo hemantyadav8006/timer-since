@@ -12,9 +12,7 @@ declare global {
 
 const isProd = process.env.WEBSITE_ENV === "prod";
 
-const mongoUri = isProd
-  ? process.env.MONGODB_URI
-  : process.env.MONGODB_URI_DEV;
+const mongoUri = isProd ? process.env.MONGODB_URI : process.env.MONGODB_URI_DEV;
 
 const MONGODB_DB_NAME = isProd
   ? process.env.MONGODB_DB_NAME

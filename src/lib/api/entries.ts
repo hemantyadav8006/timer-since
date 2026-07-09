@@ -7,9 +7,7 @@ import type {
 import { assertSuccess } from "@/lib/api/http";
 
 export async function fetchEntries(timerId?: string): Promise<EntryItem[]> {
-  const url = timerId
-    ? `/api/entries?timerId=${timerId}`
-    : "/api/entries";
+  const url = timerId ? `/api/entries?timerId=${timerId}` : "/api/entries";
   const res = await fetch(url, { cache: "no-store" });
   const data = (await res.json()) as EntriesApiResponse;
   assertSuccess(res, data, "Failed to fetch entries.");

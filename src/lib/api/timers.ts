@@ -38,11 +38,16 @@ export async function fetchTimers(
   if (params.limit) sp.set("limit", String(params.limit));
   if (params.skip) sp.set("skip", String(params.skip));
 
-  const res = await fetch(`/api/timers?${sp.toString()}`, { cache: "no-store" });
+  const res = await fetch(`/api/timers?${sp.toString()}`, {
+    cache: "no-store",
+  });
   const data = (await res.json()) as TimersApiResponse;
   assertSuccess(res, data, "Failed to fetch timers.");
   const success = data as { timers: TimerItem[]; total?: number };
-  return { timers: success.timers, total: success.total ?? success.timers.length };
+  return {
+    timers: success.timers,
+    total: success.total ?? success.timers.length,
+  };
 }
 
 export async function fetchTimer(id: string): Promise<TimerItem> {
@@ -52,7 +57,9 @@ export async function fetchTimer(id: string): Promise<TimerItem> {
   return (data as { timer: TimerItem }).timer;
 }
 
-export async function createTimer(payload: CreateTimerPayload): Promise<TimerItem> {
+export async function createTimer(
+  payload: CreateTimerPayload,
+): Promise<TimerItem> {
   const res = await fetch("/api/timers", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -111,7 +118,9 @@ function mapSharedTimer(dto: PublicTimerDto): TimerItem {
 
 export async function fetchSharedTimer(shareId: string): Promise<TimerItem> {
   const res = await fetch(`/api/share/${shareId}`, { cache: "no-store" });
-  const data = (await res.json()) as { timer: PublicTimerDto } | { error: string };
+  const data = (await res.json()) as
+    | { timer: PublicTimerDto }
+    | { error: string };
   if (!res.ok || "error" in data) {
     throw new Error("error" in data ? data.error : "Timer not found.");
   }

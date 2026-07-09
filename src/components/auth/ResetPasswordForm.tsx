@@ -44,7 +44,9 @@ export default function ResetPasswordForm() {
       if (err instanceof AuthApiError && err.attemptsLeft !== undefined) {
         setError(`${err.message} (${err.attemptsLeft} attempts left)`);
       } else {
-        setError(err instanceof Error ? err.message : "Failed to reset password.");
+        setError(
+          err instanceof Error ? err.message : "Failed to reset password.",
+        );
       }
     } finally {
       setLoading(false);
@@ -87,7 +89,12 @@ export default function ResetPasswordForm() {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.15 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+              delay: 0.15,
+            }}
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-2xl"
             style={{
               backgroundColor: `${theme.primary}22`,

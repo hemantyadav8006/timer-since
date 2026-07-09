@@ -51,7 +51,10 @@ export async function requireTimerOwner(
 export async function requireEntryOwner(
   entryId: string,
   userId: string,
-): Promise<{ entry: Awaited<ReturnType<typeof Entry.findById>> } | { error: NextResponse }> {
+): Promise<
+  | { entry: Awaited<ReturnType<typeof Entry.findById>> }
+  | { error: NextResponse }
+> {
   await connectMongo();
   const entry = await Entry.findById(entryId);
   if (!entry) {

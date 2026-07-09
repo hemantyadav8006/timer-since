@@ -144,9 +144,27 @@ type TraceConfig = {
 };
 
 const TRACES: TraceConfig[] = [
-  { label: "II", sample: sampleBeat, beatWidth: BEAT_WIDTH, amplitude: 0.9, phase: 0 },
-  { label: "V", sample: sampleBeat, beatWidth: BEAT_WIDTH, amplitude: 0.7, phase: 48 },
-  { label: "Pleth", sample: samplePleth, beatWidth: PLETH_WIDTH, amplitude: 1, phase: 0 },
+  {
+    label: "II",
+    sample: sampleBeat,
+    beatWidth: BEAT_WIDTH,
+    amplitude: 0.9,
+    phase: 0,
+  },
+  {
+    label: "V",
+    sample: sampleBeat,
+    beatWidth: BEAT_WIDTH,
+    amplitude: 0.7,
+    phase: 48,
+  },
+  {
+    label: "Pleth",
+    sample: samplePleth,
+    beatWidth: PLETH_WIDTH,
+    amplitude: 1,
+    phase: 0,
+  },
 ];
 
 // ── Grid renderer ────────────────────────────────────────
@@ -415,15 +433,7 @@ export default function ECGLine() {
       });
 
       TRACES.forEach((trace, i) => {
-        drawTrace(
-          ctx!,
-          w,
-          sweepX,
-          laneBaselines[i],
-          laneHeight,
-          trace,
-          dpr,
-        );
+        drawTrace(ctx!, w, sweepX, laneBaselines[i], laneHeight, trace, dpr);
       });
 
       // ── Wipe zone ahead of sweep (dark mode only — eraser on monitor) ──

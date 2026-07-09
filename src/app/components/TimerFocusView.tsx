@@ -32,7 +32,11 @@ const panelVariants = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] as const },
+    transition: {
+      delay: i * 0.08,
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
   }),
 };
 
@@ -141,7 +145,12 @@ export default function TimerFocusView({
         </motion.div>
       )}
 
-      <motion.div custom={4} variants={panelVariants} initial="hidden" animate="visible">
+      <motion.div
+        custom={4}
+        variants={panelVariants}
+        initial="hidden"
+        animate="visible"
+      >
         <EntriesPanel timerId={timer._id} color={timer.color} />
       </motion.div>
     </div>

@@ -21,15 +21,15 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 
 ## Routes
 
-| Route | Access | Description |
-|-------|--------|-------------|
-| `/` | Public | Redirects to `/login` or `/dashboard` |
-| `/login` | Public | Sign in / sign up |
-| `/verify-email` | Public | Email verification after signup |
-| `/forgot-password` | Public | Request password reset code |
-| `/reset-password` | Public | Enter code and set new password |
-| `/dashboard` | Protected | Main timer dashboard |
-| `/share/[shareId]` | Public | Read-only shared timer view |
+| Route              | Access    | Description                           |
+| ------------------ | --------- | ------------------------------------- |
+| `/`                | Public    | Redirects to `/login` or `/dashboard` |
+| `/login`           | Public    | Sign in / sign up                     |
+| `/verify-email`    | Public    | Email verification after signup       |
+| `/forgot-password` | Public    | Request password reset code           |
+| `/reset-password`  | Public    | Enter code and set new password       |
+| `/dashboard`       | Protected | Main timer dashboard                  |
+| `/share/[shareId]` | Public    | Read-only shared timer view           |
 
 API routes under `/api/timers`, `/api/entries`, `/api/analytics`, and `/api/export` require authentication. `/api/share/*` and `/api/auth/*` are public.
 
@@ -68,19 +68,19 @@ EMAIL_PASS=your-gmail-app-password
 EMAIL_FROM=your@gmail.com
 ```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `WEBSITE_ENV` | Yes | `dev` or `prod` — selects MongoDB credentials |
-| `MONGODB_URI_DEV` | Dev | MongoDB connection string for development |
-| `MONGODB_DB_NAME_DEV` | Dev | Database name for development |
-| `MONGODB_URI` | Prod | MongoDB connection string for production |
-| `MONGODB_DB_NAME` | Prod | Database name for production |
-| `JWT_SECRET` | Prod | Secret for signing session tokens |
-| `EMAIL_HOST` | Yes | SMTP host (e.g. `smtp.gmail.com`) |
-| `EMAIL_PORT` | Yes | SMTP port (587 for TLS) |
-| `EMAIL_USER` | Yes | Gmail address |
-| `EMAIL_PASS` | Yes | Gmail app password (spaces are stripped automatically) |
-| `EMAIL_FROM` | Yes | Sender address shown in emails |
+| Variable              | Required | Description                                            |
+| --------------------- | -------- | ------------------------------------------------------ |
+| `WEBSITE_ENV`         | Yes      | `dev` or `prod` — selects MongoDB credentials          |
+| `MONGODB_URI_DEV`     | Dev      | MongoDB connection string for development              |
+| `MONGODB_DB_NAME_DEV` | Dev      | Database name for development                          |
+| `MONGODB_URI`         | Prod     | MongoDB connection string for production               |
+| `MONGODB_DB_NAME`     | Prod     | Database name for production                           |
+| `JWT_SECRET`          | Prod     | Secret for signing session tokens                      |
+| `EMAIL_HOST`          | Yes      | SMTP host (e.g. `smtp.gmail.com`)                      |
+| `EMAIL_PORT`          | Yes      | SMTP port (587 for TLS)                                |
+| `EMAIL_USER`          | Yes      | Gmail address                                          |
+| `EMAIL_PASS`          | Yes      | Gmail app password (spaces are stripped automatically) |
+| `EMAIL_FROM`          | Yes      | Sender address shown in emails                         |
 
 ### 3. Run the dev server
 
@@ -101,12 +101,12 @@ Set `WEBSITE_ENV=prod`, production MongoDB vars, and `JWT_SECRET` before deployi
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
+| Command          | Description               |
+| ---------------- | ------------------------- |
+| `npm run dev`    | Start development server  |
+| `npm run build`  | Production build          |
+| `npm start`      | Start production server   |
+| `npm run lint`   | Run ESLint                |
 | `npm run format` | Format code with Prettier |
 
 ## Project Structure

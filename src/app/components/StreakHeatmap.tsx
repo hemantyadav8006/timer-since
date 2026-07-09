@@ -29,9 +29,9 @@ export default function StreakHeatmap({
       const dateStr = d.toISOString().split("T")[0];
       const dayStart = new Date(dateStr).getTime();
       const dayEnd = dayStart + 86_400_000;
-      const active = streaks.some(
-        (s) => s.startTime < dayEnd && s.endTime > dayStart,
-      ) || (currentStreakMs > 0 && i < currentStreakMs / 86_400_000);
+      const active =
+        streaks.some((s) => s.startTime < dayEnd && s.endTime > dayStart) ||
+        (currentStreakMs > 0 && i < currentStreakMs / 86_400_000);
       days.push({ date: dateStr, active });
     }
     return days;
@@ -45,11 +45,15 @@ export default function StreakHeatmap({
       <div className="flex gap-4 text-xs">
         <div>
           <div className="text-app-muted">Current</div>
-          <div className="font-semibold" style={{ color }}>{formatDuration(currentStreakMs)}</div>
+          <div className="font-semibold" style={{ color }}>
+            {formatDuration(currentStreakMs)}
+          </div>
         </div>
         <div>
           <div className="text-app-muted">Best</div>
-          <div className="font-semibold" style={{ color }}>{formatDuration(bestStreak)}</div>
+          <div className="font-semibold" style={{ color }}>
+            {formatDuration(bestStreak)}
+          </div>
         </div>
         <div>
           <div className="text-app-muted">Total Resets</div>
@@ -64,7 +68,11 @@ export default function StreakHeatmap({
               key={i}
               title={`${day.date}: ${day.active ? "Active" : "Inactive"}`}
               className="aspect-square rounded-[2px]"
-              style={{ backgroundColor: day.active ? `${color}70` : "var(--app-chart-empty)" }}
+              style={{
+                backgroundColor: day.active
+                  ? `${color}70`
+                  : "var(--app-chart-empty)",
+              }}
             />
           ))}
         </div>

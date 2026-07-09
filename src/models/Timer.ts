@@ -47,8 +47,14 @@ const StreakSchema = new Schema(
 );
 
 const CATEGORY_VALUES = [
-  "health", "productivity", "relationship", "education",
-  "lifestyle", "personal", "work", "custom",
+  "health",
+  "productivity",
+  "relationship",
+  "education",
+  "lifestyle",
+  "personal",
+  "work",
+  "custom",
 ];
 
 const TimerSchema = new Schema<TimerDoc>(

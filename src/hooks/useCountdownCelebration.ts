@@ -48,7 +48,10 @@ export function useCountdownCelebration(
           onCelebrateRef.current?.(timer);
         }
         playTimerSound(timer.sound, reducedMotion);
-        const t = window.setTimeout(() => setCelebrating(false), CELEBRATION_MS);
+        const t = window.setTimeout(
+          () => setCelebrating(false),
+          CELEBRATION_MS,
+        );
         prevDone.current = done;
         return () => window.clearTimeout(t);
       }

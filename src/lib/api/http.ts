@@ -1,7 +1,6 @@
 import { dispatchSessionExpired } from "@/lib/auth-events";
 
-export const SESSION_EXPIRED_MESSAGE =
-  "Session expired. Please log in again.";
+export const SESSION_EXPIRED_MESSAGE = "Session expired. Please log in again.";
 
 type ApiErrorBody = { error?: string };
 
@@ -16,11 +15,7 @@ export function handleAuthFailure(res: Response) {
   }
 }
 
-export function assertSuccess<T>(
-  res: Response,
-  data: T,
-  fallback: string,
-) {
+export function assertSuccess<T>(res: Response, data: T, fallback: string) {
   handleAuthFailure(res);
   if (
     !res.ok ||

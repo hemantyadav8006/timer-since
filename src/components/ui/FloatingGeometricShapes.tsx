@@ -46,8 +46,7 @@ const SHAPES: ShapeConfig[] = [
     animation:
       "shape-float 9s ease-in-out infinite, shape-pulse 4s ease-in-out infinite",
     style: {
-      clipPath:
-        "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)",
+      clipPath: "polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)",
     },
   },
   {
@@ -102,7 +101,9 @@ export default function FloatingGeometricShapes({
         <div
           key={i}
           className={`absolute transition-all duration-1000 ${shape.className} ${
-            mounted ? "translate-y-0 scale-100 opacity-100" : "opacity-0 scale-90"
+            mounted
+              ? "translate-y-0 scale-100 opacity-100"
+              : "opacity-0 scale-90"
           }`}
           style={{
             transitionDelay: shape.delay,

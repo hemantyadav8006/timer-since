@@ -8,7 +8,12 @@ export type SoundConfig = {
 };
 
 export const SOUND_MAP: Record<SoundName, SoundConfig> = {
-  heartbeat: { label: "Heartbeat", src: "/heartbeat.mp3", icon: "💓", loop: true },
+  heartbeat: {
+    label: "Heartbeat",
+    src: "/heartbeat.mp3",
+    icon: "💓",
+    loop: true,
+  },
   rain: { label: "Rain", src: "/rain.mp3", icon: "🌧️", loop: true },
   bowls: { label: "Singing Bowls", src: "/bowls.mp3", icon: "🔔", loop: true },
   nature: { label: "Nature", src: "/nature.mp3", icon: "🌿", loop: true },

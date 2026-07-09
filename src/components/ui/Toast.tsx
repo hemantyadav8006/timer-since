@@ -45,9 +45,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     ) => {
       const id = ++nextId;
       setItems((prev) => [...prev, { id, message, variant, action }]);
-      setTimeout(() => {
-        setItems((prev) => prev.filter((t) => t.id !== id));
-      }, variant === "undo" ? 6000 : 3500);
+      setTimeout(
+        () => {
+          setItems((prev) => prev.filter((t) => t.id !== id));
+        },
+        variant === "undo" ? 6000 : 3500,
+      );
     },
     [],
   );

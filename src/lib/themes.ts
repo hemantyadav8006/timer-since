@@ -64,7 +64,12 @@ export const THEMES: Record<ThemeName, ThemeColors> = {
 };
 
 export const THEME_NAMES: ThemeName[] = [
-  "emerald", "rose", "ocean", "purple", "amber", "monochrome",
+  "emerald",
+  "rose",
+  "ocean",
+  "purple",
+  "amber",
+  "monochrome",
 ];
 
 export function getTheme(name: ThemeName): ThemeColors {

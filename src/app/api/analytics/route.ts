@@ -25,12 +25,20 @@ export async function GET() {
     const ages = timers
       .filter((t) => !t.archived)
       .map((t) => now - t.startDate);
-    const avgAge = ages.length > 0 ? ages.reduce((a, b) => a + b, 0) / ages.length : 0;
+    const avgAge =
+      ages.length > 0 ? ages.reduce((a, b) => a + b, 0) / ages.length : 0;
     const longestAge = ages.length > 0 ? Math.max(...ages) : 0;
 
     const upcomingCountdowns = timers
-      .filter((t) => t.mode === "countdown" && !t.archived && (t.targetDate ?? t.startDate) > now)
-      .sort((a, b) => (a.targetDate ?? a.startDate) - (b.targetDate ?? b.startDate))
+      .filter(
+        (t) =>
+          t.mode === "countdown" &&
+          !t.archived &&
+          (t.targetDate ?? t.startDate) > now,
+      )
+      .sort(
+        (a, b) => (a.targetDate ?? a.startDate) - (b.targetDate ?? b.startDate),
+      )
       .slice(0, 5)
       .map((t) => ({
         _id: t._id,
@@ -94,7 +102,8 @@ export async function GET() {
 
     // Journal activity
     const timerIds = timers.map((t) => t._id.toString());
-    const entryFilter = timerIds.length > 0 ? { timerId: { $in: timerIds } } : {};
+    const entryFilter =
+      timerIds.length > 0 ? { timerId: { $in: timerIds } } : {};
     const totalEntries = await Entry.countDocuments(entryFilter);
     const recentEntries = await Entry.find(entryFilter)
       .sort({ createdAt: -1 })

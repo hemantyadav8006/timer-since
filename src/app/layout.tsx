@@ -41,7 +41,10 @@ export default function RootLayout({
           }}
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <link rel="icon" href="/icon.svg" />
       </head>
       <body className="flex min-h-full flex-col bg-app-bg text-app-fg">

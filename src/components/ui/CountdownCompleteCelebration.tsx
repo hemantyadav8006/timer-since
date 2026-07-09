@@ -18,7 +18,11 @@ export default function CountdownCompleteCelebration({
   const { reducedMotion } = useTheme();
 
   const iconSize =
-    variant === "focus" ? "text-4xl" : variant === "card" ? "text-2xl" : "text-lg";
+    variant === "focus"
+      ? "text-4xl"
+      : variant === "card"
+        ? "text-2xl"
+        : "text-lg";
   const titleSize =
     variant === "focus"
       ? "text-xl sm:text-2xl"

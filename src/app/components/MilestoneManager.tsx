@@ -8,7 +8,20 @@ import ModalBackdrop from "@/components/ui/ModalBackdrop";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import type { TimerItem, MilestoneDefinition } from "@/types/timer";
 
-const PRESET_ICONS = ["⭐", "🌟", "🏅", "🏆", "💎", "👑", "🔥", "💯", "🎯", "🎉", "💪", "🚀"];
+const PRESET_ICONS = [
+  "⭐",
+  "🌟",
+  "🏅",
+  "🏆",
+  "💎",
+  "👑",
+  "🔥",
+  "💯",
+  "🎯",
+  "🎉",
+  "💪",
+  "🚀",
+];
 
 const PRESET_DURATIONS: { label: string; ms: number }[] = [
   { label: "1 hour", ms: 3_600_000 },
@@ -26,7 +39,12 @@ type Props = {
   onUpdated: (timer: TimerItem) => void;
 };
 
-export default function MilestoneManager({ open, onClose, timer, onUpdated }: Props) {
+export default function MilestoneManager({
+  open,
+  onClose,
+  timer,
+  onUpdated,
+}: Props) {
   const { theme } = useTheme();
   const [milestones, setMilestones] = useState<MilestoneDefinition[]>(
     timer.milestoneConfig.customMilestones,
@@ -56,15 +74,26 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
   function addCustom() {
     setError(null);
     const label = newLabel.trim();
-    if (!label) { setError("Label required."); return; }
+    if (!label) {
+      setError("Label required.");
+      return;
+    }
     const days = Number(newDays) || 0;
     const hours = Number(newHours) || 0;
     const ms = days * 86_400_000 + hours * 3_600_000;
-    if (ms <= 0) { setError("Duration must be positive."); return; }
-    if (milestones.some((m) => m.durationMs === ms)) { setError("Duplicate duration."); return; }
+    if (ms <= 0) {
+      setError("Duration must be positive.");
+      return;
+    }
+    if (milestones.some((m) => m.durationMs === ms)) {
+      setError("Duplicate duration.");
+      return;
+    }
 
     setMilestones((prev) =>
-      [...prev, { label, durationMs: ms, icon: newIcon }].sort((a, b) => a.durationMs - b.durationMs),
+      [...prev, { label, durationMs: ms, icon: newIcon }].sort(
+        (a, b) => a.durationMs - b.durationMs,
+      ),
     );
     setNewLabel("");
     setNewDays("");
@@ -118,18 +147,53 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
 
       {/* Custom milestone form */}
       <div className="mb-4 space-y-2 rounded-xl border border-app-border bg-app-surface p-3">
-        <div className="text-xs font-medium text-app-muted">Add Custom Milestone</div>
+        <div className="text-xs font-medium text-app-muted">
+          Add Custom Milestone
+        </div>
         <div className="flex gap-2">
-          <input type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="Label" maxLength={50} className="min-w-0 flex-1 rounded-lg border border-app-border bg-app-input px-3 py-2 text-xs text-app-fg outline-none" />
-          <input type="number" value={newDays} onChange={(e) => setNewDays(e.target.value)} placeholder="Days" min={0} className="w-16 rounded-lg border border-app-border bg-app-input px-2 py-2 text-xs text-app-fg outline-none" />
-          <input type="number" value={newHours} onChange={(e) => setNewHours(e.target.value)} placeholder="Hrs" min={0} className="w-14 rounded-lg border border-app-border bg-app-input px-2 py-2 text-xs text-app-fg outline-none" />
+          <input
+            type="text"
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="Label"
+            maxLength={50}
+            className="min-w-0 flex-1 rounded-lg border border-app-border bg-app-input px-3 py-2 text-xs text-app-fg outline-none"
+          />
+          <input
+            type="number"
+            value={newDays}
+            onChange={(e) => setNewDays(e.target.value)}
+            placeholder="Days"
+            min={0}
+            className="w-16 rounded-lg border border-app-border bg-app-input px-2 py-2 text-xs text-app-fg outline-none"
+          />
+          <input
+            type="number"
+            value={newHours}
+            onChange={(e) => setNewHours(e.target.value)}
+            placeholder="Hrs"
+            min={0}
+            className="w-14 rounded-lg border border-app-border bg-app-input px-2 py-2 text-xs text-app-fg outline-none"
+          />
         </div>
         <div className="flex items-center gap-2">
           <div className="text-[10px] text-app-muted">Icon:</div>
           {PRESET_ICONS.map((icon) => (
-            <button key={icon} type="button" onClick={() => setNewIcon(icon)} className={`text-sm ${newIcon === icon ? "scale-125" : "opacity-50"}`}>{icon}</button>
+            <button
+              key={icon}
+              type="button"
+              onClick={() => setNewIcon(icon)}
+              className={`text-sm ${newIcon === icon ? "scale-125" : "opacity-50"}`}
+            >
+              {icon}
+            </button>
           ))}
-          <button type="button" onClick={addCustom} className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-black" style={{ backgroundColor: theme.primary }}>
+          <button
+            type="button"
+            onClick={addCustom}
+            className="ml-auto rounded-lg px-3 py-1.5 text-xs font-semibold text-black"
+            style={{ backgroundColor: theme.primary }}
+          >
             Add
           </button>
         </div>
@@ -138,28 +202,57 @@ export default function MilestoneManager({ open, onClose, timer, onUpdated }: Pr
       {/* Current milestones list */}
       <div className="mb-4 max-h-60 overflow-y-auto">
         {milestones.length === 0 ? (
-          <div className="py-6 text-center text-xs text-app-muted">No custom milestones. Default milestones will be used.</div>
+          <div className="py-6 text-center text-xs text-app-muted">
+            No custom milestones. Default milestones will be used.
+          </div>
         ) : (
           <div className="space-y-1.5">
             {milestones.map((m, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs">
+              <div
+                key={i}
+                className="flex items-center gap-2 rounded-lg border border-app-border bg-app-surface px-3 py-2 text-xs"
+              >
                 <span>{m.icon}</span>
                 <span className="flex-1 text-app-fg">{m.label}</span>
-                <span className="text-app-muted">{formatDuration(m.durationMs)}</span>
-                <button type="button" onClick={() => remove(i)} className="text-app-danger hover:text-app-danger-hover">✕</button>
+                <span className="text-app-muted">
+                  {formatDuration(m.durationMs)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => remove(i)}
+                  className="text-app-danger hover:text-app-danger-hover"
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      <ErrorBanner message={error} onDismiss={() => setError(null)} className="mb-3" />
+      <ErrorBanner
+        message={error}
+        onDismiss={() => setError(null)}
+        className="mb-3"
+      />
 
       <div className="flex gap-3">
-        <button type="button" onClick={save} disabled={saving} className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-black disabled:opacity-50" style={{ backgroundColor: theme.primary }}>
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-black disabled:opacity-50"
+          style={{ backgroundColor: theme.primary }}
+        >
           {saving ? "Saving..." : "Save Milestones"}
         </button>
-        <button type="button" onClick={onClose} className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg">Cancel</button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg"
+        >
+          Cancel
+        </button>
       </div>
     </ModalBackdrop>
   );

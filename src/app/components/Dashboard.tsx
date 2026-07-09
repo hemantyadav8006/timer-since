@@ -238,7 +238,11 @@ export default function Dashboard() {
         stoppedAt: now,
         streaks: [
           ...timer.streaks,
-          { startTime: segmentStart, endTime: now, duration: now - segmentStart },
+          {
+            startTime: segmentStart,
+            endTime: now,
+            duration: now - segmentStart,
+          },
         ],
       });
     },
@@ -396,7 +400,9 @@ export default function Dashboard() {
         {/* Timer grid/list */}
         {loading ? (
           <LoadingSkeleton
-            variant={viewMode === "list" || viewMode === "compact" ? "list" : "grid"}
+            variant={
+              viewMode === "list" || viewMode === "compact" ? "list" : "grid"
+            }
           />
         ) : timers.length === 0 ? (
           debouncedSearch ? (

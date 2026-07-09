@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
 import { Timer } from "@/models/Timer";
-import {
-  requireAuth,
-  requireTimerIdOwner,
-} from "@/lib/api/middleware";
+import { requireAuth, requireTimerIdOwner } from "@/lib/api/middleware";
 
 type EntryPayload = {
   when?: number;
@@ -80,10 +77,7 @@ export async function POST(req: Request) {
       );
     }
     if (!text) {
-      return NextResponse.json(
-        { error: "Text is required." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Text is required." }, { status: 400 });
     }
 
     await connectMongo();

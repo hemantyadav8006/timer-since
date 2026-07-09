@@ -66,7 +66,10 @@ export default memo(function TimerCard({
         }`}
         style={
           showComplete
-            ? { borderColor: `${timer.color}35`, boxShadow: `0 0 20px ${timer.color}12` }
+            ? {
+                borderColor: `${timer.color}35`,
+                boxShadow: `0 0 20px ${timer.color}12`,
+              }
             : undefined
         }
       >
@@ -107,7 +110,10 @@ export default memo(function TimerCard({
         className="flex w-full items-center gap-4 rounded-xl border border-app-border bg-app-surface/90 px-4 py-3 text-left backdrop-blur-sm transition-colors hover:border-app-fg/15 hover:bg-app-surface-strong"
         style={
           showComplete
-            ? { borderColor: `${timer.color}30`, boxShadow: `0 0 24px ${timer.color}10` }
+            ? {
+                borderColor: `${timer.color}30`,
+                boxShadow: `0 0 24px ${timer.color}10`,
+              }
             : undefined
         }
       >
@@ -208,12 +214,16 @@ export default memo(function TimerCard({
       )}
 
       {!showComplete && timer.description && (
-        <p className="line-clamp-2 text-xs text-app-muted">{timer.description}</p>
+        <p className="line-clamp-2 text-xs text-app-muted">
+          {timer.description}
+        </p>
       )}
 
       <div
         className={`rounded-xl px-4 py-3 text-center transition-shadow ${
-          showComplete ? "py-5" : "font-mono text-lg font-semibold group-hover:shadow-inner"
+          showComplete
+            ? "py-5"
+            : "font-mono text-lg font-semibold group-hover:shadow-inner"
         }`}
         style={{
           backgroundColor: `${timer.color}08`,
@@ -234,7 +244,11 @@ export default memo(function TimerCard({
 
       <div className="flex items-center justify-between">
         <span className="text-[11px] uppercase tracking-[0.2em] text-app-muted">
-          {showComplete ? "Completed" : timer.mode === "countdown" ? "Remaining" : "Elapsed"}
+          {showComplete
+            ? "Completed"
+            : timer.mode === "countdown"
+              ? "Remaining"
+              : "Elapsed"}
         </span>
         {!showComplete && timer.tags.length > 0 && (
           <div className="flex gap-1">

@@ -221,7 +221,9 @@ export default function CreateTimerModal({
                 />
               </div>
               <div className="w-20">
-                <label className="mb-1 block text-xs text-app-muted">Icon</label>
+                <label className="mb-1 block text-xs text-app-muted">
+                  Icon
+                </label>
                 <input
                   type="text"
                   value={icon}

@@ -19,7 +19,16 @@ type Particle = {
   opacity: number;
 };
 
-const COLORS = ["#00FF88", "#FF6B9D", "#38BDF8", "#A78BFA", "#FBBF24", "#FB923C", "#F472B6", "#34D399"];
+const COLORS = [
+  "#00FF88",
+  "#FF6B9D",
+  "#38BDF8",
+  "#A78BFA",
+  "#FBBF24",
+  "#FB923C",
+  "#F472B6",
+  "#34D399",
+];
 
 /**
  * Canvas-based confetti burst. Renders nothing until `active` flips to true,

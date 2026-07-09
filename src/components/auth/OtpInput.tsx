@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect, type KeyboardEvent, type ClipboardEvent } from "react";
+import {
+  useRef,
+  useState,
+  useEffect,
+  type KeyboardEvent,
+  type ClipboardEvent,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 type OtpInputProps = {
@@ -27,7 +33,9 @@ export default function OtpInput({
   }, [autoFocus]);
 
   function updateAt(index: number, char: string) {
-    const next = digits.map((d, i) => (i === index ? char : d === " " ? "" : d));
+    const next = digits.map((d, i) =>
+      i === index ? char : d === " " ? "" : d,
+    );
     onChange(next.join("").replace(/\s/g, "").slice(0, length));
   }
 
@@ -64,7 +72,10 @@ export default function OtpInput({
 
   function handlePaste(e: ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, length);
     if (!pasted) return;
     onChange(pasted);
     const focusIdx = Math.min(pasted.length, length - 1);

@@ -124,7 +124,9 @@ export default function AnalyticsDashboard({ open, onClose }: Props) {
           Loading analytics...
         </div>
       )}
-      {error && <div className="py-12 text-center text-app-danger">{error}</div>}
+      {error && (
+        <div className="py-12 text-center text-app-danger">{error}</div>
+      )}
 
       {data && (
         <div className="space-y-6">

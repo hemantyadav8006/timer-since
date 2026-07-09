@@ -19,10 +19,7 @@ type EntriesPanelProps = {
   color: string;
 };
 
-export default function EntriesPanel({
-  timerId,
-  color,
-}: EntriesPanelProps) {
+export default function EntriesPanel({ timerId, color }: EntriesPanelProps) {
   const [entries, setEntries] = useState<EntryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

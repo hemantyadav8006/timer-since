@@ -64,7 +64,9 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeNameState(savedTheme);
     }
 
-    const savedColorMode = localStorage.getItem("timer_color_mode") as ColorMode | null;
+    const savedColorMode = localStorage.getItem(
+      "timer_color_mode",
+    ) as ColorMode | null;
     if (savedColorMode === "light" || savedColorMode === "dark") {
       setColorModeState(savedColorMode);
     }
@@ -116,7 +118,9 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     (prefs: UserPreferences) => {
       // Accent theme is device-local (Header saves to timer_theme). DB defaults
       // stay at "emerald" and must not overwrite a user's local choice on reload.
-      const savedTheme = localStorage.getItem("timer_theme") as ThemeName | null;
+      const savedTheme = localStorage.getItem(
+        "timer_theme",
+      ) as ThemeName | null;
       if (
         (!savedTheme || !THEME_NAMES.includes(savedTheme)) &&
         THEME_NAMES.includes(prefs.theme as ThemeName)

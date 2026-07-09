@@ -83,7 +83,9 @@ export default function LoginForm() {
               Time Since
             </h1>
             <p className="mb-6 text-center text-sm text-app-muted">
-              {isLogin ? "Sign in to manage your timers" : "Create your account"}
+              {isLogin
+                ? "Sign in to manage your timers"
+                : "Create your account"}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">

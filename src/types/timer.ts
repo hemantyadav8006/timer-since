@@ -16,7 +16,11 @@ export type TimerCategory =
   | "work"
   | "custom";
 
-export const CATEGORIES: { value: TimerCategory; label: string; icon: string }[] = [
+export const CATEGORIES: {
+  value: TimerCategory;
+  label: string;
+  icon: string;
+}[] = [
   { value: "health", label: "Health", icon: "❤️" },
   { value: "productivity", label: "Productivity", icon: "⚡" },
   { value: "relationship", label: "Relationship", icon: "💕" },
@@ -195,8 +199,12 @@ export type RegisterApiResponse =
 export type LoginApiResponse =
   | { user: UserItem }
   | { error: string; code?: string; email?: string };
-export type VerifyEmailApiResponse = { user: UserItem } | { error: string; attemptsLeft?: number };
-export type MessageApiResponse = { ok: true; message: string } | { error: string };
+export type VerifyEmailApiResponse =
+  | { user: UserItem }
+  | { error: string; attemptsLeft?: number };
+export type MessageApiResponse =
+  | { ok: true; message: string }
+  | { error: string };
 export type ResetPasswordApiResponse =
   | { ok: true; message: string }
   | { error: string; attemptsLeft?: number };
@@ -231,7 +239,10 @@ export function computeElapsedMs(timer: TimerItem, now: number): number {
   return Math.max(0, effectiveNow - timer.startDate);
 }
 
-export function isCountdownComplete(timer: TimerItem, now = Date.now()): boolean {
+export function isCountdownComplete(
+  timer: TimerItem,
+  now = Date.now(),
+): boolean {
   if (timer.mode !== "countdown") return false;
   const effectiveNow = getEffectiveNow(timer, now);
   const target = timer.targetDate ?? timer.startDate;
