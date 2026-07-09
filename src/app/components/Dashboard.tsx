@@ -12,7 +12,12 @@ import {
 } from "@/lib/api/timers";
 import { isSessionExpiredError } from "@/lib/api/http";
 import { useToast } from "@/components/ui/Toast";
-import type { TimerItem, SortOption, UpdateTimerPayload } from "@/types/timer";
+import {
+  buildResyncPayload,
+  type TimerItem,
+  type SortOption,
+  type UpdateTimerPayload,
+} from "@/types/timer";
 import EmptyState from "@/components/ui/EmptyState";
 import LoadingSkeleton from "@/components/ui/LoadingSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -57,7 +62,10 @@ export default function Dashboard() {
   const [shareTimer, setShareTimer] = useState<TimerItem | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<TimerItem | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [confettiActive, setConfettiActive] = useState(false);
+  const [confetti, setConfetti] = useState<{
+    active: boolean;
+    color: string;
+  } | null>(null);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const loadRequestRef = useRef(0);
 
@@ -130,16 +138,27 @@ export default function Dashboard() {
     return { pinned, favorites, countdowns };
   }, [timers]);
 
+  const triggerConfetti = useCallback((color: string) => {
+    setConfetti({ active: true, color });
+    window.setTimeout(() => setConfetti(null), 4000);
+  }, []);
+
+  const handleCountdownComplete = useCallback(
+    (timer: TimerItem) => {
+      triggerConfetti(timer.color);
+    },
+    [triggerConfetti],
+  );
+
   // ── CRUD handlers ─────────────────────────────────────
   const handleCreated = useCallback(
     (timer: TimerItem) => {
       setTimers((prev) => [timer, ...prev]);
       setTotal((t) => t + 1);
       toast("Timer created!", "success");
-      setConfettiActive(true);
-      setTimeout(() => setConfettiActive(false), 4000);
+      triggerConfetti(theme.primary);
     },
-    [toast],
+    [toast, theme.primary, triggerConfetti],
   );
 
   const handleUpdated = useCallback((updated: TimerItem) => {
@@ -228,13 +247,7 @@ export default function Dashboard() {
 
   const handleResync = useCallback(
     (timer: TimerItem) => {
-      const stoppedAt = timer.stoppedAt ?? Date.now();
-      const pauseMs = Date.now() - stoppedAt;
-      void quickUpdate(timer._id, {
-        stopped: false,
-        stoppedAt: null,
-        startDate: timer.startDate + pauseMs,
-      });
+      void quickUpdate(timer._id, buildResyncPayload(timer));
     },
     [quickUpdate],
   );
@@ -438,6 +451,7 @@ export default function Dashboard() {
                   <TimerCard
                     timer={timer}
                     onClick={() => setSelectedId(timer._id)}
+                    onCountdownComplete={handleCountdownComplete}
                     variant={
                       viewMode === "compact"
                         ? "compact"
@@ -478,7 +492,10 @@ export default function Dashboard() {
         destructive
         loading={deleting}
       />
-      <Confetti active={confettiActive} color={theme.primary} />
+      <Confetti
+        active={!!confetti?.active}
+        color={confetti?.color ?? theme.primary}
+      />
     </>
   );
 }

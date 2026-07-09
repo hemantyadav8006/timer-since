@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useMemo } from "react";
 import { formatElapsed, formatCountdown, pad2 } from "@/lib/utils";
-import { getEffectiveNow, isCountdownComplete } from "@/types/timer";
+import { getEffectiveNow } from "@/types/timer";
 import type { ElapsedTime, TimerItem } from "@/types/timer";
-import { notifyCountdownComplete } from "@/lib/notifications";
+import { useCountdownCelebration } from "@/hooks/useCountdownCelebration";
+import CountdownCompleteCelebration from "@/components/ui/CountdownCompleteCelebration";
 import Confetti from "@/components/ui/Confetti";
 
 type TimerDisplayProps = {
@@ -36,18 +37,9 @@ export default memo(function TimerDisplay({
 }: TimerDisplayProps) {
   const isCountdown = timer.mode === "countdown";
   const effectiveNow = getEffectiveNow(timer, now);
-  const done = isCountdownComplete(timer, now);
-  const prevDone = useRef(done);
-  const [celebrate, setCelebrate] = useState(false);
-
-  useEffect(() => {
-    if (done && !prevDone.current) {
-      setCelebrate(true);
-      notifyCountdownComplete(timer.title, timer.icon);
-      setTimeout(() => setCelebrate(false), 4000);
-    }
-    prevDone.current = done;
-  }, [done, timer.title, timer.icon]);
+  const { done, celebrating } = useCountdownCelebration(timer, now, {
+    enabled: true,
+  });
 
   const elapsed: ElapsedTime = useMemo(() => {
     if (isCountdown) {
@@ -67,7 +59,7 @@ export default memo(function TimerDisplay({
 
   return (
     <div className="space-y-5">
-      <Confetti active={celebrate} color={timer.color} />
+      <Confetti active={celebrating} color={timer.color} />
       {/* Header row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
@@ -155,10 +147,12 @@ export default memo(function TimerDisplay({
 
       {/* Timer counter */}
       <div
-        className="animate-glow-pulse relative rounded-2xl border bg-app-surface px-6 py-8 text-center sm:py-10"
+        className={`relative rounded-2xl border bg-app-surface px-6 py-8 text-center sm:py-10 ${
+          celebrating ? "animate-glow-pulse" : ""
+        }`}
         style={{
-          borderColor: `${timer.color}15`,
-          boxShadow: `0 0 50px ${timer.color}08`,
+          borderColor: done ? `${timer.color}35` : `${timer.color}15`,
+          boxShadow: done ? `0 0 50px ${timer.color}15` : `0 0 50px ${timer.color}08`,
         }}
       >
         <div
@@ -169,11 +163,12 @@ export default memo(function TimerDisplay({
         />
 
         {done ? (
-          <div
-            className="relative text-2xl font-bold"
-            style={{ color: timer.color }}
-          >
-            Countdown complete!
+          <div className="relative py-2">
+            <CountdownCompleteCelebration
+              timer={timer}
+              celebrating={celebrating}
+              variant="focus"
+            />
           </div>
         ) : (
           <div className="relative font-mono text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
@@ -200,7 +195,7 @@ export default memo(function TimerDisplay({
         )}
 
         <div className="relative mt-3 text-xs uppercase tracking-[0.3em] text-app-muted">
-          {isCountdown ? "Remaining" : "Elapsed time"}
+          {done ? "Completed" : isCountdown ? "Remaining" : "Elapsed time"}
         </div>
       </div>
 

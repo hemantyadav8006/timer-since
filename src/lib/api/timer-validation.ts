@@ -87,7 +87,9 @@ export function validateTimerFields(
   }
 
   if (mode === "countdown") {
-    const target = fields.targetDate ?? fields.startDate;
+    const target = opts.isCreate
+      ? (fields.targetDate ?? fields.startDate)
+      : fields.targetDate;
     if (target !== undefined && target !== null) {
       if (typeof target !== "number" || !Number.isFinite(target)) {
         return NextResponse.json(
@@ -101,6 +103,11 @@ export function validateTimerFields(
           { status: 400 },
         );
       }
+    } else if (opts.isCreate) {
+      return NextResponse.json(
+        { error: "Target date is required for countdown timers." },
+        { status: 400 },
+      );
     }
   }
 

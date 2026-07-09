@@ -19,3 +19,17 @@ export const SOUND_MAP: Record<SoundName, SoundConfig> = {
 export function getSoundSrc(sound: SoundName): string | null {
   return SOUND_MAP[sound].src;
 }
+
+export function playTimerSound(sound: SoundName, muted = false): void {
+  if (muted || sound === "none") return;
+  const src = getSoundSrc(sound);
+  if (!src || typeof window === "undefined") return;
+  try {
+    const audio = new Audio(src);
+    audio.volume = 0.4;
+    audio.loop = false;
+    void audio.play().catch(() => {});
+  } catch {
+    /* audio unavailable */
+  }
+}

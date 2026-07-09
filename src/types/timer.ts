@@ -237,3 +237,17 @@ export function isCountdownComplete(timer: TimerItem, now = Date.now()): boolean
   const target = timer.targetDate ?? timer.startDate;
   return target <= effectiveNow;
 }
+
+/** Shift a paused timer forward by the time spent paused. */
+export function buildResyncPayload(timer: TimerItem): UpdateTimerPayload {
+  const stoppedAt = timer.stoppedAt ?? Date.now();
+  const pauseMs = Date.now() - stoppedAt;
+  const base = { stopped: false as const, stoppedAt: null };
+
+  if (timer.mode === "countdown") {
+    const target = timer.targetDate ?? timer.startDate;
+    return { ...base, targetDate: target + pauseMs };
+  }
+
+  return { ...base, startDate: timer.startDate + pauseMs };
+}

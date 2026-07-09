@@ -1,3 +1,6 @@
+import type { SoundName } from "@/types/timer";
+import { playTimerSound } from "@/lib/sounds";
+
 let swRegistration: ServiceWorkerRegistration | null = null;
 
 /** Register the service worker without prompting for permission. */
@@ -43,6 +46,7 @@ export type NotifyOptions = {
   tag?: string;
   requireInteraction?: boolean;
   sound?: boolean;
+  soundName?: SoundName;
 };
 
 export function sendNotification(opts: NotifyOptions): void {
@@ -64,13 +68,7 @@ export function sendNotification(opts: NotifyOptions): void {
   }
 
   if (opts.sound) {
-    try {
-      const audio = new Audio("/heartbeat.mp3");
-      audio.volume = 0.3;
-      audio.play().catch(() => {});
-    } catch {
-      /* audio not available */
-    }
+    playTimerSound(opts.soundName ?? "heartbeat");
   }
 
   updateBadge();
@@ -89,13 +87,19 @@ export function notifyMilestoneAchieved(
   });
 }
 
-export function notifyCountdownComplete(timerTitle: string, timerIcon: string): void {
+export function notifyCountdownComplete(
+  timerTitle: string,
+  timerIcon: string,
+  soundName: SoundName = "heartbeat",
+  options?: { withSound?: boolean },
+): void {
   sendNotification({
     title: `${timerIcon} Countdown Complete!`,
     body: `"${timerTitle}" has finished!`,
     tag: `countdown-complete-${timerTitle}`,
     requireInteraction: true,
-    sound: true,
+    sound: options?.withSound ?? true,
+    soundName,
   });
 }
 
