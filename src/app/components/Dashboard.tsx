@@ -309,6 +309,10 @@ export default function Dashboard() {
           destructive
           loading={deleting}
         />
+        <Confetti
+          active={!!confetti?.active}
+          color={confetti?.color ?? theme.primary}
+        />
       </>
     );
   }

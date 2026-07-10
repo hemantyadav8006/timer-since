@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ConfettiProps = {
   active: boolean;
@@ -31,14 +32,19 @@ const COLORS = [
 ];
 
 /**
- * Canvas-based confetti burst. Renders nothing until `active` flips to true,
- * then animates 120 particles once and cleans up.
+ * Canvas-based confetti burst. Portaled to document.body so it always covers
+ * the viewport (avoids framer-motion transform / overflow clipping).
  */
 export default function Confetti({ active, color }: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!active) return;
+    setPortalTarget(document.body);
+  }, []);
+
+  useEffect(() => {
+    if (!active || !portalTarget) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -54,7 +60,7 @@ export default function Confetti({ active, color }: ConfettiProps) {
 
     const particles: Particle[] = Array.from({ length: 120 }, () => ({
       x: w * 0.5 + (Math.random() - 0.5) * 200,
-      y: h * 0.35,
+      y: h * 0.45,
       vx: (Math.random() - 0.5) * 14,
       vy: -(Math.random() * 12 + 4),
       size: Math.random() * 6 + 3,
@@ -94,15 +100,16 @@ export default function Confetti({ active, color }: ConfettiProps) {
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [active, color]);
+  }, [active, color, portalTarget]);
 
-  if (!active) return null;
+  if (!active || !portalTarget) return null;
 
-  return (
+  return createPortal(
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-200"
+      className="pointer-events-none fixed inset-0 z-9999"
       aria-hidden="true"
-    />
+    />,
+    portalTarget,
   );
 }
