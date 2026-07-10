@@ -69,24 +69,6 @@ export default memo(function TimerDisplay({
               {timer.title}
             </h2>
           </div>
-          {timer.description && (
-            <p className="mt-1 text-sm text-app-muted">{timer.description}</p>
-          )}
-          <div className="mt-1 text-xs text-app-muted">
-            {isCountdown ? "Target" : "Started"}: {formattedDate}
-          </div>
-          {timer.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {timer.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-app-surface-strong px-2 py-0.5 text-[11px] text-app-muted"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Action buttons */}
@@ -114,13 +96,15 @@ export default memo(function TimerDisplay({
           >
             Edit
           </button>
-          <button
-            type="button"
-            onClick={onDuplicate}
-            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
-          >
-            Duplicate
-          </button>
+          {!timer.stopped && (
+            <button
+              type="button"
+              onClick={onDuplicate}
+              className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+            >
+              Duplicate
+            </button>
+          )}
           <button
             type="button"
             onClick={onShare}
@@ -133,7 +117,7 @@ export default memo(function TimerDisplay({
             onClick={onArchive}
             className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
           >
-            Archive
+            {timer.archived ? "Unarchive" : "Archive"}
           </button>
           <button
             type="button"
@@ -143,6 +127,27 @@ export default memo(function TimerDisplay({
             Delete
           </button>
         </div>
+      </div>
+
+      <div className="text-sm text-app-muted">
+        <div className="mt-1 text-xs text-app-muted">
+          {isCountdown ? "Target" : "Started"}: {formattedDate}
+        </div>
+        {timer.description && (
+          <p className="mt-1 text-sm text-app-muted">{timer.description}</p>
+        )}
+        {timer.tags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {timer.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-app-surface-strong px-2 py-0.5 text-[11px] text-app-muted"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Timer counter */}

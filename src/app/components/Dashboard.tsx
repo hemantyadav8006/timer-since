@@ -297,7 +297,10 @@ export default function Dashboard() {
           open={shareOpen}
           onClose={() => setShareOpen(false)}
           timer={shareTimer}
-          onTimerUpdated={handleUpdated}
+          onTimerUpdated={(updated) => {
+            handleUpdated(updated);
+            setShareTimer(updated);
+          }}
         />
         <ConfirmDialog
           open={!!deleteConfirm}

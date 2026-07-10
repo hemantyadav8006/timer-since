@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { updateTimer } from "@/lib/api/timers";
 import { useToast } from "@/components/ui/Toast";
@@ -24,23 +24,32 @@ export default function ShareDialog({
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [draft, setDraft] = useState<TimerItem | null>(timer);
 
-  if (!timer) return null;
+  useEffect(() => {
+    if (open) setDraft(timer);
+  }, [open, timer]);
+
+  if (!draft) return null;
 
   const shareUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/share/${timer.shareId}`
+      ? `${window.location.origin}/share/${draft.shareId}`
       : "";
 
   async function togglePublic() {
-    if (!timer) return;
+    if (!draft) return;
+    const nextPublic = !draft.isPublic;
+    setDraft({ ...draft, isPublic: nextPublic });
     setToggling(true);
     try {
-      const updated = await updateTimer(timer._id, {
-        isPublic: !timer.isPublic,
+      const updated = await updateTimer(draft._id, {
+        isPublic: nextPublic,
       });
+      setDraft(updated);
       onTimerUpdated(updated);
     } catch {
+      setDraft({ ...draft, isPublic: !nextPublic });
       toast("Failed to update sharing settings.", "error");
     } finally {
       setToggling(false);
@@ -67,19 +76,19 @@ export default function ShareDialog({
             disabled={toggling}
             className="relative h-6 w-11 rounded-full transition"
             style={{
-              backgroundColor: timer.isPublic
+              backgroundColor: draft.isPublic
                 ? theme.primary
                 : "var(--app-toggle-off)",
             }}
             role="switch"
-            aria-checked={timer.isPublic}
+            aria-checked={draft.isPublic}
           >
             <span
-              className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-app-surface-strong transition-transform ${timer.isPublic ? "translate-x-5" : ""}`}
+              className={`absolute left-0.5 top-[2.5px] h-5 w-5 rounded-full border border-white bg-app-surface-strong transition-all duration-300 ${draft.isPublic ? "translate-x-5" : ""}`}
             />
           </button>
         </div>
-        {timer.isPublic && (
+        {draft.isPublic && (
           <div>
             <div className="mb-1 text-xs text-app-muted">Share link</div>
             <div className="flex items-center gap-2">
