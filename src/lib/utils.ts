@@ -37,18 +37,23 @@ export function formatPlayback(seconds: number): string {
  * Uses calendar-aware date arithmetic for accurate year & month values.
  */
 export function formatElapsed(ms: number): ElapsedTime {
-  const zero: ElapsedTime = { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  const zero: ElapsedTime = {
+    years: 0,
+    months: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  };
   if (ms <= 0) return zero;
 
   const start = new Date(Date.now() - ms);
   const end = new Date();
 
-  // ── Step 1: sub-day difference (hours, minutes, seconds) ──
   let hours = end.getHours() - start.getHours();
   let minutes = end.getMinutes() - start.getMinutes();
   let seconds = end.getSeconds() - start.getSeconds();
 
-  // Borrow upward: seconds → minutes → hours → days
   if (seconds < 0) {
     seconds += 60;
     minutes--;
@@ -64,15 +69,17 @@ export function formatElapsed(ms: number): ElapsedTime {
     dayBorrow = 1;
   }
 
-  // ── Step 2: calendar difference (years, months, days) ─────
   let years = end.getFullYear() - start.getFullYear();
   let months = end.getMonth() - start.getMonth();
   let days = end.getDate() - start.getDate() - dayBorrow;
 
   if (days < 0) {
     months--;
-    // Number of days in the month before `end`
-    const daysInPrevMonth = new Date(end.getFullYear(), end.getMonth(), 0).getDate();
+    const daysInPrevMonth = new Date(
+      end.getFullYear(),
+      end.getMonth(),
+      0,
+    ).getDate();
     days += daysInPrevMonth;
   }
 
@@ -84,6 +91,26 @@ export function formatElapsed(ms: number): ElapsedTime {
   return { years, months, days, hours, minutes, seconds };
 }
 
+/** Escape special regex characters for safe MongoDB $regex use. */
+export function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Format remaining time for countdown timers.
+ * Pass `now` for consistent display when paused or tick-synced.
+ */
+export function formatCountdown(
+  targetTime: number,
+  now = Date.now(),
+): ElapsedTime {
+  const remaining = targetTime - now;
+  if (remaining <= 0) {
+    return { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 };
+  }
+  return formatElapsed(remaining);
+}
+
 /** Check whether a `datetime-local` string can be parsed. */
 export function isValidDatetimeLocal(value: string): boolean {
   return Number.isFinite(Date.parse(value));
@@ -91,7 +118,7 @@ export function isValidDatetimeLocal(value: string): boolean {
 
 /**
  * Convert an epoch-ms timestamp into the value format used by
- * `<input type="datetime-local">` → `"YYYY-MM-DDTHH:mm"`.
+ * `<input type="datetime-local">` -> `"YYYY-MM-DDTHH:mm"`.
  */
 export function toDatetimeLocalValue(epochMs: number): string {
   const d = new Date(epochMs);
@@ -101,4 +128,62 @@ export function toDatetimeLocalValue(epochMs: number): string {
   const hh = pad2(d.getHours());
   const mi = pad2(d.getMinutes());
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+/** Generate a unique share ID (full UUID, no hyphens). */
+export function generateShareId(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+/** Format a duration in ms to a human-readable string. */
+export function formatDuration(ms: number): string {
+  if (ms < 0) return "0s";
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+
+  if (d > 0) return `${d}d ${h % 24}h`;
+  if (h > 0) return `${h}h ${m % 60}m`;
+  if (m > 0) return `${m}m ${s % 60}s`;
+  return `${s}s`;
+}
+
+/** Convert timer data to CSV format. */
+export function timersToCSV(
+  timers: {
+    title: string;
+    mode: string;
+    startDate: number;
+    category: string;
+    tags?: string[];
+    favorite?: boolean;
+    pinned?: boolean;
+    archived?: boolean;
+    createdAt?: string;
+  }[],
+): string {
+  const headers = [
+    "Title",
+    "Mode",
+    "Start Date",
+    "Category",
+    "Tags",
+    "Favorite",
+    "Pinned",
+    "Archived",
+    "Created At",
+  ];
+  const rows = timers.map((t) => [
+    `"${t.title.replace(/"/g, '""')}"`,
+    t.mode,
+    new Date(t.startDate).toISOString(),
+    t.category,
+    `"${(t.tags ?? []).join(", ")}"`,
+    String(t.favorite ?? false),
+    String(t.pinned ?? false),
+    String(t.archived ?? false),
+    t.createdAt ?? "",
+  ]);
+  return [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 }

@@ -1,29 +1,70 @@
 @import "tailwindcss";
 
+/* ── Color mode tokens (light default, dark via html.dark) ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --app-bg: #f4f4f5;
+  --app-fg: #18181b;
+  --app-muted: #71717a;
+  --app-border: rgba(24, 24, 27, 0.12);
+  --app-surface: rgba(255, 255, 255, 0.72);
+  --app-surface-strong: #ffffff;
+  --app-input-bg: #ffffff;
+  --app-overlay: rgba(0, 0, 0, 0.4);
+  --app-modal-bg: rgba(255, 255, 255, 0.98);
+  --app-accent-glow: rgba(0, 255, 136, 0.12);
+  --ecg-opacity: 0.35;
+  --app-danger: #dc2626;
+  --app-danger-hover: #b91c1c;
+  --app-warning: #d97706;
+  --app-chart-empty: rgba(24, 24, 27, 0.06);
+  --app-toggle-off: rgba(24, 24, 27, 0.15);
+  --scrollbar-thumb: rgba(24, 24, 27, 0.2);
+}
+
+html.dark {
+  --app-bg: #000000;
+  --app-fg: #ededed;
+  --app-muted: rgba(255, 255, 255, 0.45);
+  --app-border: rgba(255, 255, 255, 0.1);
+  --app-surface: rgba(255, 255, 255, 0.03);
+  --app-surface-strong: rgba(255, 255, 255, 0.06);
+  --app-input-bg: rgba(0, 0, 0, 0.6);
+  --app-overlay: rgba(0, 0, 0, 0.7);
+  --app-modal-bg: rgba(10, 10, 10, 0.95);
+  --app-accent-glow: rgba(0, 255, 136, 0.08);
+  --ecg-opacity: 0.55;
+  --ecg-wipe-mid: rgba(0, 0, 0, 0.7);
+  --ecg-wipe-clear: rgba(0, 0, 0, 0);
+  --app-danger: #fca5a5;
+  --app-danger-hover: #fecaca;
+  --app-warning: #fcd34d;
+  --app-chart-empty: rgba(255, 255, 255, 0.04);
+  --app-toggle-off: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--app-bg);
+  --color-foreground: var(--app-fg);
+  --color-app-bg: var(--app-bg);
+  --color-app-fg: var(--app-fg);
+  --color-app-muted: var(--app-muted);
+  --color-app-border: var(--app-border);
+  --color-app-surface: var(--app-surface);
+  --color-app-surface-strong: var(--app-surface-strong);
+  --color-app-input: var(--app-input-bg);
+  --color-app-danger: var(--app-danger);
+  --color-app-warning: var(--app-warning);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-family: var(--font-geist-mono), monospace;
 }
 
+/* Glow pulse animation for timer cards */
 @keyframes glow-pulse {
   0%,
   100% {
@@ -36,4 +77,170 @@ body {
 
 .animate-glow-pulse {
   animation: glow-pulse 3.2s ease-in-out infinite;
+}
+
+/* Floating geometric shapes */
+@keyframes shape-float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-14px) translateX(6px);
+  }
+}
+
+@keyframes shape-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shape-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--app-surface) 0%,
+    color-mix(in srgb, var(--app-surface-strong) 80%, var(--app-fg)) 50%,
+    var(--app-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.bg-auth-mesh {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 20% 40%,
+      color-mix(in srgb, var(--app-accent-glow) 60%, transparent),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 80% 70%,
+      color-mix(in srgb, var(--app-accent-glow) 40%, transparent),
+      transparent
+    );
+}
+
+.auth-card-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--app-border) 80%, transparent),
+    0 24px 48px -12px rgba(0, 0, 0, 0.35),
+    0 0 60px color-mix(in srgb, var(--app-accent-glow) 120%, transparent);
+}
+
+.auth-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--app-border);
+  background: color-mix(in srgb, var(--app-input-bg) 92%, transparent);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: var(--app-fg);
+  outline: none;
+  backdrop-filter: blur(8px);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.auth-input:focus {
+  border-color: color-mix(in srgb, var(--app-fg) 25%, transparent);
+  box-shadow: 0 0 0 3px var(--app-accent-glow);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--scrollbar-thumb) 70%, var(--app-fg));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-glow-pulse,
+  .animate-shimmer {
+    animation: none;
+  }
+
+  [style*="shape-float"],
+  [style*="shape-rotate"],
+  [style*="shape-pulse"] {
+    animation: none !important;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--app-fg);
+  cursor: pointer;
+  border: 2px solid var(--app-border);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--app-fg);
+  cursor: pointer;
+  border: 2px solid var(--app-border);
+}
+
+html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+option {
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
 }

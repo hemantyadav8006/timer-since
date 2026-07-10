@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { migrateExistingUsersVerified } from "@/lib/migrations/verify-existing-users";
 
 declare global {
   var __mongooseConn:
@@ -11,9 +12,7 @@ declare global {
 
 const isProd = process.env.WEBSITE_ENV === "prod";
 
-const mongoUri = isProd
-  ? process.env.MONGODB_URI
-  : process.env.MONGODB_URI_DEV;
+const mongoUri = isProd ? process.env.MONGODB_URI : process.env.MONGODB_URI_DEV;
 
 const MONGODB_DB_NAME = isProd
   ? process.env.MONGODB_DB_NAME
@@ -36,22 +35,24 @@ export default async function connectMongo() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      dbName: MONGODB_DB_NAME || undefined,
-      bufferCommands: false,
-    });
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        dbName: MONGODB_DB_NAME || undefined,
+        bufferCommands: false,
+      })
+      .catch((err) => {
+        cached.promise = null;
+        throw err;
+      });
   }
 
   try {
     cached.conn = await cached.promise;
-    console.log("Connected to MongoDB!");
+    await migrateExistingUsersVerified();
     return cached.conn;
   } catch (err) {
     cached.promise = null;
-    console.error(
-      "Failed to connect to MongoDB:",
-      err instanceof Error ? err.message : err,
-    );
+    cached.conn = null;
     throw err;
   }
 }

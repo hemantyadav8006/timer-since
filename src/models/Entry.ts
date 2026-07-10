@@ -1,15 +1,16 @@
 import mongoose, { Model, Schema } from "mongoose";
 
 export type EntryDoc = {
-  when: number; // epoch ms
+  timerId: string;
+  when: number;
   text: string;
-  // Added by `timestamps: true`
   createdAt?: Date;
   updatedAt?: Date;
 };
 
 const EntrySchema = new Schema<EntryDoc>(
   {
+    timerId: { type: String, index: true, default: "" },
     when: { type: Number, required: true },
     text: { type: String, required: true, trim: true, maxlength: 280 },
   },

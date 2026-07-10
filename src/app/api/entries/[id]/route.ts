@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import { Entry } from "@/models/Entry";
+import { requireAuth, requireEntryOwner } from "@/lib/api/middleware";
 
 type EntryPayload = {
   when?: number;
@@ -12,7 +13,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+
     const { id } = await params;
+    const owned = await requireEntryOwner(id, auth.userId);
+    if ("error" in owned) return owned.error;
+
     const body = (await req.json()) as EntryPayload;
     const when = body.when;
     const text = body.text?.trim() ?? "";
@@ -54,7 +61,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAuth();
+    if ("error" in auth) return auth.error;
+
     const { id } = await params;
+    const owned = await requireEntryOwner(id, auth.userId);
+    if ("error" in owned) return owned.error;
+
     await connectMongo();
     const deleted = await Entry.findByIdAndDelete(id).lean();
     if (!deleted) {

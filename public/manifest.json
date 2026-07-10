@@ -1,0 +1,19 @@
+{
+  "name": "Time Since",
+  "short_name": "TimeSince",
+  "description": "Multi-purpose timer platform for tracking time since or until any event.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait-primary",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
