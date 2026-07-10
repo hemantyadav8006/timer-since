@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { formatElapsed, formatCountdown, pad2 } from "@/lib/utils";
+import { formatElapsed, formatCountdown, pad2, formatDate } from "@/lib/utils";
 import { getEffectiveNow } from "@/types/timer";
 import type { ElapsedTime, TimerItem } from "@/types/timer";
 import { useCountdownCelebration } from "@/hooks/useCountdownCelebration";
@@ -51,17 +51,13 @@ export default memo(function TimerDisplay({
 
   const formattedDate = useMemo(
     () =>
-      new Date(
-        isCountdown ? (timer.targetDate ?? timer.startDate) : timer.startDate,
-      ).toLocaleString(),
+      formatDate(
+        new Date(
+          isCountdown ? (timer.targetDate ?? timer.startDate) : timer.startDate,
+        ).toISOString(),
+      ),
     [timer.startDate, timer.targetDate, isCountdown],
   );
-
-  const formattedStop = useMemo(() => {
-    if (!stopped) return "";
-
-    return formatDate(new Date(now).toISOString());
-  }, [stopped, now]);
 
   return (
     <div className="space-y-5">
