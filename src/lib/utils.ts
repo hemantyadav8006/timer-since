@@ -9,6 +9,21 @@ export function pad2(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+export const formatDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateString;
+  }
+};
+
 /** Format seconds into `m:ss` for audio playback display. */
 export function formatPlayback(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
