@@ -1,5 +1,5 @@
-const CACHE_NAME = "time-since-v1";
-const STATIC_ASSETS = ["/", "/icon.svg"];
+const CACHE_NAME = "time-since-v2";
+const STATIC_ASSETS = ["/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -26,8 +26,14 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  // Network-first for API calls, cache-first for assets
-  if (event.request.url.includes("/api/")) {
+  // Never intercept navigations — caching redirected HTML causes ERR_FAILED.
+  if (event.request.mode === "navigate") return;
+
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Network-first for API calls
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(event.request).catch(() =>
         caches.match(event.request).then(
@@ -40,7 +46,11 @@ self.addEventListener("fetch", (event) => {
         ),
       ),
     );
-  } else {
+    return;
+  }
+
+  // Cache-first only for same-origin static assets we explicitly manage
+  if (STATIC_ASSETS.includes(url.pathname)) {
     event.respondWith(
       caches.match(event.request).then(
         (cached) =>
