@@ -5,6 +5,7 @@ import { generateShareId } from "@/lib/utils";
 import { escapeRegex } from "@/lib/utils";
 import { requireAuth } from "@/lib/api/middleware";
 import { validateTimerFields } from "@/lib/api/timer-validation";
+import { sanitizeYouTubeFields } from "@/lib/youtube-shared";
 
 const ALLOWED_SORT: Record<string, Record<string, 1 | -1>> = {
   newest: { createdAt: -1 },
@@ -97,11 +98,19 @@ export async function POST(req: Request) {
       startDate,
       targetDate = null,
       sound = "none",
+      youtubeVideoId = null,
+      youtubeTitle = null,
+      youtubeThumbnail = null,
       milestoneConfig,
     } = body;
 
     await connectMongo();
     const { userId } = auth;
+    const youtube = sanitizeYouTubeFields({
+      youtubeVideoId,
+      youtubeTitle,
+      youtubeThumbnail,
+    });
 
     const timer = await Timer.create({
       title: title.trim(),
@@ -131,6 +140,7 @@ export async function POST(req: Request) {
         customMilestones: [],
       },
       sound,
+      ...youtube,
     });
 
     return NextResponse.json({ timer }, { status: 201 });

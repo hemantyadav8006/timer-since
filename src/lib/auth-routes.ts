@@ -21,6 +21,7 @@ export const PROTECTED_API_PREFIXES = [
   "/api/entries",
   "/api/analytics",
   "/api/export",
+  "/api/youtube",
 ];
 
 export function isPublicPage(pathname: string): boolean {

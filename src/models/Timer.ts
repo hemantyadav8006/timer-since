@@ -24,6 +24,9 @@ export type TimerDoc = {
     customMilestones: { label: string; durationMs: number; icon: string }[];
   };
   sound: string;
+  youtubeVideoId: string | null;
+  youtubeTitle: string | null;
+  youtubeThumbnail: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -89,6 +92,9 @@ const TimerSchema = new Schema<TimerDoc>(
       enum: ["heartbeat", "rain", "bowls", "nature", "chime", "none"],
       default: "none",
     },
+    youtubeVideoId: { type: String, default: null, maxlength: 32 },
+    youtubeTitle: { type: String, default: null, maxlength: 200 },
+    youtubeThumbnail: { type: String, default: null, maxlength: 500 },
   },
   { timestamps: true },
 );
