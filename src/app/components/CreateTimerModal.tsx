@@ -14,6 +14,9 @@ import {
 } from "@/types/timer";
 import ModalBackdrop from "@/components/ui/ModalBackdrop";
 import ErrorBanner from "@/components/ui/ErrorBanner";
+import YouTubeTrackPicker, {
+  type YouTubeTrackSelection,
+} from "./YouTubeTrackPicker";
 
 type CreateTimerModalProps = {
   open: boolean;
@@ -51,6 +54,11 @@ export default function CreateTimerModal({
   const [category, setCategory] = useState<TimerCategory>("personal");
   const [tagsInput, setTagsInput] = useState("");
   const [sound, setSound] = useState<SoundName>("none");
+  const [youtubeTrack, setYoutubeTrack] = useState<YouTubeTrackSelection>({
+    youtubeVideoId: null,
+    youtubeTitle: null,
+    youtubeThumbnail: null,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -97,6 +105,11 @@ export default function CreateTimerModal({
     setCategory("personal");
     setTagsInput("");
     setSound("none");
+    setYoutubeTrack({
+      youtubeVideoId: null,
+      youtubeTitle: null,
+      youtubeThumbnail: null,
+    });
     setError(null);
   }
 
@@ -140,6 +153,9 @@ export default function CreateTimerModal({
         startDate: mode === "elapsed" ? ms : Date.now(),
         targetDate: mode === "countdown" ? ms : null,
         sound,
+        youtubeVideoId: youtubeTrack.youtubeVideoId,
+        youtubeTitle: youtubeTrack.youtubeTitle,
+        youtubeThumbnail: youtubeTrack.youtubeThumbnail,
       };
       const timer = await createTimer(payload);
       onCreated(timer);
@@ -346,9 +362,11 @@ export default function CreateTimerModal({
               </div>
             </div>
 
-            {/* Sound */}
+            {/* Sound (alert / local ambient) */}
             <div>
-              <label className="mb-1 block text-xs text-app-muted">Sound</label>
+              <label className="mb-1 block text-xs text-app-muted">
+                Alert / local sound
+              </label>
               <select
                 value={sound}
                 onChange={(e) => setSound(e.target.value as SoundName)}
@@ -362,6 +380,11 @@ export default function CreateTimerModal({
                 <option value="chime">Chime</option>
               </select>
             </div>
+
+            <YouTubeTrackPicker
+              value={youtubeTrack}
+              onChange={setYoutubeTrack}
+            />
 
             <ErrorBanner message={error} onDismiss={() => setError(null)} />
 

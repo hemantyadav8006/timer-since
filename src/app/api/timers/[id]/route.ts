@@ -8,6 +8,7 @@ import {
   requireTimerOwner,
 } from "@/lib/api/middleware";
 import { validateTimerFields } from "@/lib/api/timer-validation";
+import { sanitizeYouTubeFields } from "@/lib/youtube-shared";
 
 const UPDATABLE_FIELDS = [
   "title",
@@ -26,6 +27,9 @@ const UPDATABLE_FIELDS = [
   "stoppedAt",
   "isPublic",
   "sound",
+  "youtubeVideoId",
+  "youtubeTitle",
+  "youtubeThumbnail",
   "milestoneConfig",
   "streaks",
 ];
@@ -112,6 +116,28 @@ export async function PUT(
           );
         }
       }
+    }
+
+    const touchingYouTube =
+      "youtubeVideoId" in safe ||
+      "youtubeTitle" in safe ||
+      "youtubeThumbnail" in safe;
+    if (touchingYouTube) {
+      const youtube = sanitizeYouTubeFields({
+        youtubeVideoId:
+          "youtubeVideoId" in safe
+            ? (safe.youtubeVideoId as string | null)
+            : (owned.timer.youtubeVideoId as string | null | undefined),
+        youtubeTitle:
+          "youtubeTitle" in safe
+            ? (safe.youtubeTitle as string | null)
+            : (owned.timer.youtubeTitle as string | null | undefined),
+        youtubeThumbnail:
+          "youtubeThumbnail" in safe
+            ? (safe.youtubeThumbnail as string | null)
+            : (owned.timer.youtubeThumbnail as string | null | undefined),
+      });
+      Object.assign(safe, youtube);
     }
 
     await connectMongo();

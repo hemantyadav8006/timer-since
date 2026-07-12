@@ -113,6 +113,9 @@ function mapSharedTimer(dto: PublicTimerDto): TimerItem {
     streaks: [],
     milestoneConfig: dto.milestoneConfig,
     sound: "none",
+    youtubeVideoId: null,
+    youtubeTitle: null,
+    youtubeThumbnail: null,
   };
 }
 
@@ -139,6 +142,9 @@ export async function duplicateTimer(timer: TimerItem): Promise<TimerItem> {
     startDate: timer.startDate,
     targetDate: timer.targetDate,
     sound: timer.sound,
+    youtubeVideoId: timer.youtubeVideoId,
+    youtubeTitle: timer.youtubeTitle,
+    youtubeThumbnail: timer.youtubeThumbnail,
     milestoneConfig: timer.milestoneConfig,
   });
 }

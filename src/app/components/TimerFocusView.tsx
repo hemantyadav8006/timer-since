@@ -11,6 +11,8 @@ import MilestoneManager from "./MilestoneManager";
 import StreakHeatmap from "./StreakHeatmap";
 import EntriesPanel from "./EntriesPanel";
 import SoundPicker from "./SoundPicker";
+import YouTubeAmbientPlayer from "./YouTubeAmbientPlayer";
+import { isValidYouTubeVideoId } from "@/lib/youtube-shared";
 
 type TimerFocusViewProps = {
   timer: TimerItem;
@@ -100,7 +102,16 @@ export default function TimerFocusView({
         animate="visible"
         className="mt-4"
       >
-        <SoundPicker sound={timer.sound} color={timer.color} />
+        {isValidYouTubeVideoId(timer.youtubeVideoId) ? (
+          <YouTubeAmbientPlayer
+            videoId={timer.youtubeVideoId}
+            title={timer.youtubeTitle}
+            thumbnail={timer.youtubeThumbnail}
+            color={timer.color}
+          />
+        ) : (
+          <SoundPicker sound={timer.sound} color={timer.color} />
+        )}
       </motion.div>
 
       {timer.mode === "elapsed" && (

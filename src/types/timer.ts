@@ -102,6 +102,9 @@ export type TimerItem = {
   streaks: StreakRecord[];
   milestoneConfig: MilestoneConfig;
   sound: SoundName;
+  youtubeVideoId?: string | null;
+  youtubeTitle?: string | null;
+  youtubeThumbnail?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -118,6 +121,9 @@ export type CreateTimerPayload = {
   startDate: number;
   targetDate?: number | null;
   sound?: SoundName;
+  youtubeVideoId?: string | null;
+  youtubeTitle?: string | null;
+  youtubeThumbnail?: string | null;
   milestoneConfig?: MilestoneConfig;
 };
 
@@ -141,6 +147,9 @@ export type UpdateTimerPayload = Partial<
     | "stoppedAt"
     | "isPublic"
     | "sound"
+    | "youtubeVideoId"
+    | "youtubeTitle"
+    | "youtubeThumbnail"
     | "milestoneConfig"
     | "streaks"
   >

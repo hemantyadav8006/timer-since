@@ -13,6 +13,9 @@ import {
 } from "@/types/timer";
 import ModalBackdrop from "@/components/ui/ModalBackdrop";
 import ErrorBanner from "@/components/ui/ErrorBanner";
+import YouTubeTrackPicker, {
+  type YouTubeTrackSelection,
+} from "./YouTubeTrackPicker";
 
 const PRESET_COLORS = [
   "#00FF88",
@@ -49,6 +52,11 @@ export default function EditTimerModal({
   const [tagsInput, setTagsInput] = useState("");
   const [dateValue, setDateValue] = useState("");
   const [sound, setSound] = useState<SoundName>("none");
+  const [youtubeTrack, setYoutubeTrack] = useState<YouTubeTrackSelection>({
+    youtubeVideoId: null,
+    youtubeTitle: null,
+    youtubeThumbnail: null,
+  });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -68,6 +76,11 @@ export default function EditTimerModal({
       ),
     );
     setSound(timer.sound);
+    setYoutubeTrack({
+      youtubeVideoId: timer.youtubeVideoId ?? null,
+      youtubeTitle: timer.youtubeTitle ?? null,
+      youtubeThumbnail: timer.youtubeThumbnail ?? null,
+    });
     setError(null);
   }, [timer]);
 
@@ -107,6 +120,9 @@ export default function EditTimerModal({
       category,
       tags,
       sound,
+      youtubeVideoId: youtubeTrack.youtubeVideoId,
+      youtubeTitle: youtubeTrack.youtubeTitle,
+      youtubeThumbnail: youtubeTrack.youtubeThumbnail,
     };
 
     if (timer!.mode === "elapsed") {
@@ -220,6 +236,26 @@ export default function EditTimerModal({
             />
           </div>
         </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-app-muted">
+            Alert / local sound
+          </label>
+          <select
+            value={sound}
+            onChange={(e) => setSound(e.target.value as SoundName)}
+            className="w-full rounded-xl border border-app-border bg-app-input px-4 py-2.5 text-sm text-app-fg outline-none"
+          >
+            <option value="none">None</option>
+            <option value="heartbeat">Heartbeat</option>
+            <option value="rain">Rain</option>
+            <option value="bowls">Singing Bowls</option>
+            <option value="nature">Nature</option>
+            <option value="chime">Chime</option>
+          </select>
+        </div>
+
+        <YouTubeTrackPicker value={youtubeTrack} onChange={setYoutubeTrack} />
 
         <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
