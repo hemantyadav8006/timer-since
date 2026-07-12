@@ -113,9 +113,9 @@ function mapSharedTimer(dto: PublicTimerDto): TimerItem {
     streaks: [],
     milestoneConfig: dto.milestoneConfig,
     sound: "none",
-    youtubeVideoId: null,
-    youtubeTitle: null,
-    youtubeThumbnail: null,
+    youtubeVideoId: dto.youtubeVideoId,
+    youtubeTitle: dto.youtubeTitle,
+    youtubeThumbnail: dto.youtubeThumbnail,
   };
 }
 

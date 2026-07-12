@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import AppBackground from "@/components/ui/AppBackground";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import MilestoneBadges from "@/app/components/MilestoneBadges";
+import YouTubeAmbientPlayer from "@/app/components/YouTubeAmbientPlayer";
 import { fetchSharedTimer } from "@/lib/api/timers";
 import { computeElapsedMs } from "@/types/timer";
 import type { TimerItem } from "@/types/timer";
 import { useTimerTick } from "@/hooks/useTimerTick";
+import { isValidYouTubeVideoId } from "@/lib/youtube-shared";
 
 export default function SharedTimerPage({
   params,
@@ -67,6 +69,7 @@ export default function SharedTimerPage({
                 <TimerDisplay
                   timer={timer}
                   now={now}
+                  readOnly
                   onStop={noop}
                   onResync={noop}
                   onDelete={noop}
@@ -78,6 +81,21 @@ export default function SharedTimerPage({
                   onArchive={noop}
                 />
               </div>
+
+              {isValidYouTubeVideoId(timer.youtubeVideoId) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <YouTubeAmbientPlayer
+                    videoId={timer.youtubeVideoId}
+                    title={timer.youtubeTitle}
+                    thumbnail={timer.youtubeThumbnail}
+                    color={timer.color}
+                  />
+                </motion.div>
+              )}
 
               {timer.mode === "elapsed" && (
                 <motion.div

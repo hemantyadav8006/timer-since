@@ -11,6 +11,7 @@ import Confetti from "@/components/ui/Confetti";
 type TimerDisplayProps = {
   timer: TimerItem;
   now: number;
+  readOnly?: boolean;
   onStop: () => void;
   onResync: () => void;
   onDelete: () => void;
@@ -25,6 +26,7 @@ type TimerDisplayProps = {
 export default memo(function TimerDisplay({
   timer,
   now,
+  readOnly = false,
   onStop,
   onResync,
   onDelete,
@@ -74,61 +76,63 @@ export default memo(function TimerDisplay({
         </div>
 
         {/* Action buttons */}
-        <div className="flex flex-wrap gap-1.5">
-          <button
-            type="button"
-            onClick={onToggleFavorite}
-            title={timer.favorite ? "Unfavorite" : "Favorite"}
-            className="rounded-lg border border-app-border px-2 py-1.5 text-xs hover:bg-app-surface-strong"
-          >
-            {timer.favorite ? "⭐" : "☆"}
-          </button>
-          <button
-            type="button"
-            onClick={onTogglePin}
-            title={timer.pinned ? "Unpin" : "Pin"}
-            className="rounded-lg border border-app-border px-2 py-1.5 text-xs hover:bg-app-surface-strong"
-          >
-            {timer.pinned ? "📌" : "📍"}
-          </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
-          >
-            Edit
-          </button>
-          {!timer.stopped && (
+        {!readOnly && (
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
-              onClick={onDuplicate}
+              onClick={onToggleFavorite}
+              title={timer.favorite ? "Unfavorite" : "Favorite"}
+              className="rounded-lg border border-app-border px-2 py-1.5 text-xs hover:bg-app-surface-strong"
+            >
+              {timer.favorite ? "⭐" : "☆"}
+            </button>
+            <button
+              type="button"
+              onClick={onTogglePin}
+              title={timer.pinned ? "Unpin" : "Pin"}
+              className="rounded-lg border border-app-border px-2 py-1.5 text-xs hover:bg-app-surface-strong"
+            >
+              {timer.pinned ? "📌" : "📍"}
+            </button>
+            <button
+              type="button"
+              onClick={onEdit}
               className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
             >
-              Duplicate
+              Edit
             </button>
-          )}
-          <button
-            type="button"
-            onClick={onShare}
-            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
-          >
-            Share
-          </button>
-          <button
-            type="button"
-            onClick={onArchive}
-            className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
-          >
-            {timer.archived ? "Unarchive" : "Archive"}
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="rounded-lg border border-red-500/15 px-2.5 py-1.5 text-xs text-app-danger hover:text-app-danger-hover"
-          >
-            Delete
-          </button>
-        </div>
+            {!timer.stopped && (
+              <button
+                type="button"
+                onClick={onDuplicate}
+                className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+              >
+                Duplicate
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onShare}
+              className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+            >
+              Share
+            </button>
+            <button
+              type="button"
+              onClick={onArchive}
+              className="rounded-lg border border-app-border px-2.5 py-1.5 text-xs text-app-muted hover:text-app-fg"
+            >
+              {timer.archived ? "Unarchive" : "Archive"}
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-lg border border-red-500/15 px-2.5 py-1.5 text-xs text-app-danger hover:text-app-danger-hover"
+            >
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="text-sm text-app-muted">
@@ -209,7 +213,7 @@ export default memo(function TimerDisplay({
       </div>
 
       {/* Controls */}
-      {done ? null : (
+      {!readOnly && !done && (
         <div className="flex flex-col gap-2 sm:flex-row">
           {!timer.stopped ? (
             <button
@@ -237,7 +241,9 @@ export default memo(function TimerDisplay({
 
       {timer.stopped && !done && (
         <div className="text-center text-sm text-app-warning">
-          Timer paused — press Resync to resume
+          {readOnly
+            ? "Timer is paused"
+            : "Timer paused — press Resync to resume"}
         </div>
       )}
     </div>

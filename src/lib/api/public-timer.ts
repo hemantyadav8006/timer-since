@@ -14,6 +14,9 @@ export type PublicTimerDto = {
   stopped: boolean;
   stoppedAt: number | null;
   milestoneConfig: MilestoneConfig;
+  youtubeVideoId: string | null;
+  youtubeTitle: string | null;
+  youtubeThumbnail: string | null;
 };
 
 export function toPublicTimerDto(timer: {
@@ -29,6 +32,9 @@ export function toPublicTimerDto(timer: {
   stopped: boolean;
   stoppedAt: number | null;
   milestoneConfig: MilestoneConfig;
+  youtubeVideoId?: string | null;
+  youtubeTitle?: string | null;
+  youtubeThumbnail?: string | null;
 }): PublicTimerDto {
   return {
     shareId: timer.shareId,
@@ -43,5 +49,8 @@ export function toPublicTimerDto(timer: {
     stopped: timer.stopped,
     stoppedAt: timer.stoppedAt,
     milestoneConfig: timer.milestoneConfig,
+    youtubeVideoId: timer.youtubeVideoId ?? null,
+    youtubeTitle: timer.youtubeTitle ?? null,
+    youtubeThumbnail: timer.youtubeThumbnail ?? null,
   };
 }
