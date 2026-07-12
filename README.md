@@ -9,8 +9,13 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 - **Milestones & streaks** — Custom milestones, pause/resync with streak history, heatmap visualization
 - **Journal entries** — Per-timer notes with full CRUD
 - **Analytics & export** — Dashboard stats, activity heatmap, JSON/CSV export
-- **Public sharing** — Read-only shared timer pages at `/share/[shareId]`
+- **Public sharing** — Read-only shared timer pages at `/share/[shareId]` (no edit controls; shows YouTube ambient when set)
+- **Local sounds** — Preset ambient/alert sounds (rain, nature, chime, etc.) for focus and countdown completion
+- **YouTube ambient** — Search and attach a YouTube video per timer; plays via official IFrame embed on focus and share views (not audio-only)
 - **Themes & preferences** — Multiple color themes, languages, grid/list/compact views, reduced motion
+- **Extras** — Breathing exercise, countdown confetti celebration, browser notifications
+
+
 
 ## Tech Stack
 
@@ -18,8 +23,12 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 - **UI:** React 19, Tailwind CSS 4, Framer Motion
 - **Database:** MongoDB + Mongoose
 - **Auth:** bcrypt password hashing, custom JWT in httpOnly cookie
+- **YouTube:** Data API v3 (search, server-side) + IFrame Player API (playback)
+
+
 
 ## Routes
+
 
 | Route              | Access    | Description                           |
 | ------------------ | --------- | ------------------------------------- |
@@ -31,15 +40,20 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 | `/dashboard`       | Protected | Main timer dashboard                  |
 | `/share/[shareId]` | Public    | Read-only shared timer view           |
 
-API routes under `/api/timers`, `/api/entries`, `/api/analytics`, and `/api/export` require authentication. `/api/share/*` and `/api/auth/*` are public.
+
+API routes under `/api/timers`, `/api/entries`, `/api/analytics`, `/api/export`, and `/api/youtube` require authentication. `/api/share/*` and `/api/auth/*` are public.
 
 ## Getting Started
+
+
 
 ### 1. Install dependencies
 
 ```bash
 npm install
 ```
+
+
 
 ### 2. Configure environment
 
@@ -66,21 +80,30 @@ EMAIL_PORT=587
 EMAIL_USER=your@gmail.com
 EMAIL_PASS=your-gmail-app-password
 EMAIL_FROM=your@gmail.com
+
+# YouTube Data API v3 — optional; enables song search in create/edit
+# Enable "YouTube Data API v3" in Google Cloud, then paste the API key (server-only)
+YOUTUBE_API_KEY=your_youtube_api_key
 ```
 
-| Variable              | Required | Description                                            |
-| --------------------- | -------- | ------------------------------------------------------ |
-| `WEBSITE_ENV`         | Yes      | `dev` or `prod` — selects MongoDB credentials          |
-| `MONGODB_URI_DEV`     | Dev      | MongoDB connection string for development              |
-| `MONGODB_DB_NAME_DEV` | Dev      | Database name for development                          |
-| `MONGODB_URI`         | Prod     | MongoDB connection string for production               |
-| `MONGODB_DB_NAME`     | Prod     | Database name for production                           |
-| `JWT_SECRET`          | Prod     | Secret for signing session tokens                      |
-| `EMAIL_HOST`          | Yes      | SMTP host (e.g. `smtp.gmail.com`)                      |
-| `EMAIL_PORT`          | Yes      | SMTP port (587 for TLS)                                |
-| `EMAIL_USER`          | Yes      | Gmail address                                          |
-| `EMAIL_PASS`          | Yes      | Gmail app password (spaces are stripped automatically) |
-| `EMAIL_FROM`          | Yes      | Sender address shown in emails                         |
+
+| Variable              | Required | Description                                                |
+| --------------------- | -------- | ---------------------------------------------------------- |
+| `WEBSITE_ENV`         | Yes      | `dev` or `prod` — selects MongoDB credentials              |
+| `MONGODB_URI_DEV`     | Dev      | MongoDB connection string for development                  |
+| `MONGODB_DB_NAME_DEV` | Dev      | Database name for development                              |
+| `MONGODB_URI`         | Prod     | MongoDB connection string for production                   |
+| `MONGODB_DB_NAME`     | Prod     | Database name for production                               |
+| `JWT_SECRET`          | Prod     | Secret for signing session tokens                          |
+| `EMAIL_HOST`          | Yes      | SMTP host (e.g. `smtp.gmail.com`)                          |
+| `EMAIL_PORT`          | Yes      | SMTP port (587 for TLS)                                    |
+| `EMAIL_USER`          | Yes      | Gmail address                                              |
+| `EMAIL_PASS`          | Yes      | Gmail app password (spaces are stripped automatically)     |
+| `EMAIL_FROM`          | Yes      | Sender address shown in emails                             |
+| `YOUTUBE_API_KEY`     | No       | Server-only key for YouTube search (`/api/youtube/search`) |
+
+
+
 
 ### 3. Run the dev server
 
@@ -99,7 +122,19 @@ npm start
 
 Set `WEBSITE_ENV=prod`, production MongoDB vars, and `JWT_SECRET` before deploying.
 
+## YouTube ambient (optional)
+
+Timers can store a YouTube **video ID** (plus title/thumbnail metadata) — not audio files.
+
+1. Enable **YouTube Data API v3** in [Google Cloud Console](https://console.cloud.google.com/).
+2. Create an API key and set `YOUTUBE_API_KEY` in `.env` (never use `NEXT_PUBLIC_` for this key).
+3. In Create/Edit Timer, search and select a video under **YouTube ambient**.
+4. Playback uses the official **IFrame Player** on focus view and public share pages. Local preset sounds remain for countdown alerts.
+
+**Notes:** Default search quota is limited (~100 `search.list` calls/day). Embed-blocked or region-restricted videos may fail to play. Audio-only / background-only YouTube playback is not supported (YouTube ToS).
+
 ## Scripts
+
 
 | Command          | Description               |
 | ---------------- | ------------------------- |
@@ -109,23 +144,28 @@ Set `WEBSITE_ENV=prod`, production MongoDB vars, and `JWT_SECRET` before deployi
 | `npm run lint`   | Run ESLint                |
 | `npm run format` | Format code with Prettier |
 
+
+
+
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── api/           # REST API routes (auth, timers, entries, analytics, export, share)
-│   ├── components/    # UI components (Dashboard, TimerCard, modals, etc.)
+│   ├── api/           # REST API (auth, timers, entries, analytics, export, share, youtube)
+│   ├── components/    # UI (Dashboard, TimerCard, YouTube player/picker, modals, etc.)
 │   ├── dashboard/     # Protected dashboard page
 │   ├── login/         # Public login page
 │   ├── providers/     # AuthProvider, ThemeProvider
-│   └── share/         # Public shared timer page
+│   └── share/         # Public shared timer page (read-only)
 ├── components/auth/   # LoginForm, ProtectedRoute, PublicRoute
-├── hooks/             # useTimerTick, useDebounce, useLocalStorage
-├── lib/               # Auth, MongoDB, API clients, utilities
+├── hooks/             # useTimerTick, useDebounce, useCountdownCelebration, …
+├── lib/               # Auth, MongoDB, API clients, youtube helpers, utilities
 ├── models/            # Mongoose models (User, Timer, Entry)
 └── proxy.ts           # Route protection & session checks (network proxy)
 ```
+
+
 
 ## Auth Flow
 
@@ -137,3 +177,4 @@ src/
 6. On page load, `AuthProvider` validates the session via `GET /api/auth/me`.
 7. Logout or session expiry clears the cookie and redirects to `/login`.
 8. Timer data is scoped per user — all CRUD operations enforce ownership server-side.
+
