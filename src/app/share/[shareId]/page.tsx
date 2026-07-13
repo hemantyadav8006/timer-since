@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AppBackground from "@/components/ui/AppBackground";
 import TimerDisplay from "@/app/components/TimerDisplay";
 import MilestoneBadges from "@/app/components/MilestoneBadges";
 import YouTubeAmbientPlayer from "@/app/components/YouTubeAmbientPlayer";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { useTheme } from "@/app/providers/ThemeProvider";
 import { fetchSharedTimer } from "@/lib/api/timers";
 import { computeElapsedMs } from "@/types/timer";
 import type { TimerItem } from "@/types/timer";
 import { useTimerTick } from "@/hooks/useTimerTick";
 import { isValidYouTubeVideoId } from "@/lib/youtube-shared";
+import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth-routes";
 
 export default function SharedTimerPage({
   params,
@@ -18,9 +22,14 @@ export default function SharedTimerPage({
   params: Promise<{ shareId: string }>;
 }) {
   const { shareId } = use(params);
+  const { user, loading: authLoading } = useAuth();
+  const { theme } = useTheme();
   const [timer, setTimer] = useState<TimerItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const now = useTimerTick(timer?.stopped ?? true);
+
+  const sharePath = `/share/${shareId}`;
+  const loginHref = `${LOGIN_PATH}?from=${encodeURIComponent(sharePath)}`;
 
   useEffect(() => {
     fetchSharedTimer(shareId)
@@ -36,6 +45,38 @@ export default function SharedTimerPage({
   return (
     <AppBackground centered className="px-4">
       <main className="relative z-10 w-full max-w-2xl py-8 md:py-12">
+        <motion.header
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-6 flex items-center justify-between gap-3 md:mb-8"
+        >
+          <Link
+            href={user ? DASHBOARD_PATH : loginHref}
+            className="text-base font-bold tracking-wider md:text-lg"
+            style={{ color: theme.primary }}
+          >
+            Time Since
+          </Link>
+
+          {!authLoading &&
+            (user ? (
+              <Link
+                href={DASHBOARD_PATH}
+                className="rounded-lg border border-app-border bg-app-surface/80 px-3 py-1.5 text-xs text-app-fg backdrop-blur-sm transition hover:bg-app-surface-strong md:text-sm"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href={loginHref}
+                className="rounded-lg border border-app-border bg-app-surface/80 px-3 py-1.5 text-xs text-app-fg backdrop-blur-sm transition hover:bg-app-surface-strong md:text-sm"
+              >
+                Log In
+              </Link>
+            ))}
+        </motion.header>
+
         <AnimatePresence mode="wait">
           {error ? (
             <motion.div
@@ -108,9 +149,22 @@ export default function SharedTimerPage({
                 </motion.div>
               )}
 
-              <p className="text-center text-xs text-app-muted">
-                Shared timer &middot; Read only
-              </p>
+              <div className="space-y-1.5 text-center">
+                <p className="text-xs text-app-muted">
+                  Shared timer &middot; Read only
+                </p>
+                {!authLoading && !user && (
+                  <p className="text-xs text-app-muted">
+                    Want your own timers?{" "}
+                    <Link
+                      href={loginHref}
+                      className="text-app-fg/80 underline-offset-2 transition hover:text-app-fg hover:underline"
+                    >
+                      Sign up free
+                    </Link>
+                  </p>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
