@@ -15,6 +15,7 @@ type YtPlayer = {
   playVideo: () => void;
   pauseVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  setSize?: (width: number, height: number) => void;
 };
 
 type YtNamespace = {
@@ -131,6 +132,17 @@ export default memo(function YouTubeAmbientPlayer({
     host.appendChild(target);
 
     const isCurrent = () => !cancelled && generation === generationRef.current;
+    let resizeObserver: ResizeObserver | null = null;
+
+    const syncPlayerSize = (player: YtPlayer) => {
+      const width = Math.max(host.clientWidth, 1);
+      const height = Math.max(host.clientHeight, 1);
+      try {
+        player.setSize?.(width, height);
+      } catch {
+        /* ignore */
+      }
+    };
 
     void loadYouTubeApi().then((ok) => {
       if (!isCurrent()) return;
@@ -140,10 +152,13 @@ export default memo(function YouTubeAmbientPlayer({
       }
       if (!host.contains(target)) return;
 
+      const width = Math.max(host.clientWidth, 1);
+      const height = Math.max(host.clientHeight, 1);
+
       const player = new window.YT.Player(target, {
         videoId,
-        width: "100%",
-        height: "200",
+        width,
+        height,
         playerVars: {
           rel: 0,
           modestbranding: 1,
@@ -155,6 +170,7 @@ export default memo(function YouTubeAmbientPlayer({
         events: {
           onReady: () => {
             if (!isCurrent()) return;
+            syncPlayerSize(player);
             setReady(true);
           },
           onStateChange: (event) => {
@@ -181,8 +197,16 @@ export default memo(function YouTubeAmbientPlayer({
 
       playerRef.current = player;
 
+      resizeObserver = new ResizeObserver(() => {
+        if (!isCurrent() || !playerRef.current) return;
+        syncPlayerSize(playerRef.current);
+      });
+      resizeObserver.observe(host);
+
       // Cleanup may have run between construct and assignment.
       if (!isCurrent()) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
         try {
           player.destroy();
         } catch {
@@ -195,6 +219,7 @@ export default memo(function YouTubeAmbientPlayer({
     return () => {
       cancelled = true;
       generationRef.current += 1;
+      resizeObserver?.disconnect();
       const current = playerRef.current;
       playerRef.current = null;
       try {
@@ -251,7 +276,7 @@ export default memo(function YouTubeAmbientPlayer({
 
       <div
         ref={hostRef}
-        className="aspect-video w-full overflow-hidden rounded-xl bg-black/40"
+        className="relative aspect-video w-full overflow-hidden rounded-xl bg-black/40 [&_iframe]:absolute [&_iframe]:inset-0 [&_iframe]:h-full [&_iframe]:w-full"
       />
     </div>
   );
