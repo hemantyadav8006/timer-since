@@ -1,28 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/app/providers/ThemeProvider";
 import { TEMPLATES } from "@/lib/templates";
 import { toDatetimeLocalValue, isValidDatetimeLocal } from "@/lib/utils";
 import { createTimer } from "@/lib/api/timers";
+import { parseTimerPrompt } from "@/lib/api/ai";
 import {
   CATEGORIES,
   type TimerItem,
   type TimerCategory,
   type SoundName,
   type CreateTimerPayload,
+  type MilestoneConfig,
 } from "@/types/timer";
 import ModalBackdrop from "@/components/ui/ModalBackdrop";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import YouTubeTrackPicker, {
   type YouTubeTrackSelection,
 } from "./YouTubeTrackPicker";
+import { PARSE_TIMER_MAX_PROMPT_CHARS } from "@/lib/ai/constants";
 
 type CreateTimerModalProps = {
   open: boolean;
   onClose: () => void;
   onCreated: (timer: TimerItem) => void;
 };
+
+type Step = "template" | "describe" | "form";
 
 const PRESET_COLORS = [
   "#00FF88",
@@ -43,7 +48,7 @@ export default function CreateTimerModal({
   onCreated,
 }: CreateTimerModalProps) {
   const { theme } = useTheme();
-  const [step, setStep] = useState<"template" | "form">("template");
+  const [step, setStep] = useState<Step>("template");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -54,6 +59,10 @@ export default function CreateTimerModal({
   const [category, setCategory] = useState<TimerCategory>("personal");
   const [tagsInput, setTagsInput] = useState("");
   const [sound, setSound] = useState<SoundName>("none");
+  const [milestoneConfig, setMilestoneConfig] = useState<MilestoneConfig>({
+    enabled: true,
+    customMilestones: [],
+  });
   const [youtubeTrack, setYoutubeTrack] = useState<YouTubeTrackSelection>({
     youtubeVideoId: null,
     youtubeTitle: null,
@@ -61,6 +70,25 @@ export default function CreateTimerModal({
   });
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+
+  const [nlPrompt, setNlPrompt] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [aiAssumptions, setAiAssumptions] = useState<string[]>([]);
+  const [aiConfidence, setAiConfidence] = useState<
+    "high" | "medium" | "low" | null
+  >(null);
+
+  const parseRequestId = useRef(0);
+  const stepRef = useRef<Step>(step);
+  stepRef.current = step;
+
+  useEffect(() => {
+    if (!open) {
+      // Invalidate in-flight AI responses when modal closes
+      parseRequestId.current += 1;
+      setIsParsing(false);
+    }
+  }, [open]);
 
   function selectTemplate(tmpl: (typeof TEMPLATES)[0]) {
     setTitle(tmpl.defaultName);
@@ -91,10 +119,22 @@ export default function CreateTimerModal({
       }[tmpl.defaultTheme] ?? "#00FF88",
     );
     setSound(tmpl.defaultSound);
+    setMilestoneConfig({
+      enabled: true,
+      customMilestones: tmpl.milestones.map((m) => ({
+        label: m.label,
+        durationMs: m.durationMs,
+        icon: m.icon,
+      })),
+    });
+    setAiAssumptions([]);
+    setAiConfidence(null);
+    setDateValue("");
     setStep("form");
   }
 
   function reset() {
+    parseRequestId.current += 1;
     setStep("template");
     setTitle("");
     setDescription("");
@@ -105,12 +145,81 @@ export default function CreateTimerModal({
     setCategory("personal");
     setTagsInput("");
     setSound("none");
+    setMilestoneConfig({ enabled: true, customMilestones: [] });
     setYoutubeTrack({
       youtubeVideoId: null,
       youtubeTitle: null,
       youtubeThumbnail: null,
     });
+    setNlPrompt("");
+    setAiAssumptions([]);
+    setAiConfidence(null);
     setError(null);
+    setIsParsing(false);
+    setIsCreating(false);
+  }
+
+  function handleModeChange(next: "elapsed" | "countdown") {
+    if (next === mode) return;
+    setMode(next);
+    // Date semantics flip — clear stale value so user re-picks intentionally
+    setDateValue("");
+  }
+
+  async function handleAiParse() {
+    setError(null);
+    const text = nlPrompt.trim();
+    if (text.length < 3) {
+      setError("Describe your timer in a few words.");
+      return;
+    }
+
+    const requestId = ++parseRequestId.current;
+    try {
+      setIsParsing(true);
+      const result = await parseTimerPrompt(text);
+
+      // Ignore stale responses (user navigated away, closed modal, or re-ran)
+      if (requestId !== parseRequestId.current) return;
+      if (stepRef.current !== "describe") return;
+
+      const { payload, assumptions, confidence } = result;
+
+      setTitle(payload.title);
+      setDescription(payload.description ?? "");
+      setIcon(payload.icon ?? "⏱️");
+      setColor(payload.color ?? "#00FF88");
+      setMode(payload.mode ?? "elapsed");
+      setCategory(payload.category ?? "personal");
+      setTagsInput((payload.tags ?? []).join(", "));
+      setSound(payload.sound ?? "none");
+      setMilestoneConfig(
+        payload.milestoneConfig ?? { enabled: true, customMilestones: [] },
+      );
+
+      const dateMs =
+        payload.mode === "countdown"
+          ? (payload.targetDate ?? Date.now())
+          : payload.startDate;
+      setDateValue(toDatetimeLocalValue(dateMs));
+
+      setAiAssumptions(assumptions ?? []);
+      setAiConfidence(confidence);
+      setStep("form");
+    } catch (e) {
+      if (requestId !== parseRequestId.current) return;
+      const message =
+        e instanceof Error ? e.message : "Failed to generate timer draft.";
+      setError(
+        message.includes("not configured")
+          ? `${message} You can still use a template or start from scratch.`
+          : message,
+      );
+    } finally {
+      if (requestId === parseRequestId.current) {
+        setIsParsing(false);
+      }
+    }
   }
 
   async function handleCreate() {
@@ -156,6 +265,7 @@ export default function CreateTimerModal({
         youtubeVideoId: youtubeTrack.youtubeVideoId,
         youtubeTitle: youtubeTrack.youtubeTitle,
         youtubeThumbnail: youtubeTrack.youtubeThumbnail,
+        milestoneConfig,
       };
       const timer = await createTimer(payload);
       onCreated(timer);
@@ -168,13 +278,33 @@ export default function CreateTimerModal({
     }
   }
 
+  function handleClose() {
+    reset();
+    onClose();
+  }
+
   return (
-    <ModalBackdrop open={open} onClose={onClose}>
+    <ModalBackdrop open={open} onClose={handleClose}>
       {step === "template" ? (
         <>
           <h2 className="mb-4 text-lg font-bold text-app-fg">
             Choose a Template
           </h2>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setStep("describe");
+            }}
+            className="mb-3 w-full rounded-xl border border-app-border bg-app-surface px-4 py-3 text-left transition hover:bg-app-surface-strong"
+          >
+            <div className="text-sm font-semibold text-app-fg">
+              Describe with AI
+            </div>
+            <div className="mt-0.5 text-xs text-app-muted">
+              e.g. &ldquo;90 days sober since March 1, rain sound&rdquo;
+            </div>
+          </button>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {TEMPLATES.map((tmpl) => (
               <button
@@ -201,18 +331,85 @@ export default function CreateTimerModal({
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="mt-2 w-full rounded-xl py-2 text-sm text-app-muted hover:text-app-muted"
           >
             Cancel
           </button>
+        </>
+      ) : step === "describe" ? (
+        <>
+          <div className="mb-4 flex items-center gap-2">
+            <button
+              type="button"
+              disabled={isParsing}
+              onClick={() => {
+                parseRequestId.current += 1;
+                setIsParsing(false);
+                setError(null);
+                setStep("template");
+              }}
+              className="text-app-muted hover:text-app-fg disabled:opacity-50"
+            >
+              &larr;
+            </button>
+            <h2 className="text-lg font-bold text-app-fg">Describe your timer</h2>
+          </div>
+          <p className="mb-3 text-xs text-app-muted">
+            AI drafts a timer you can review and edit before creating. Nothing is
+            saved until you confirm.
+          </p>
+          <textarea
+            value={nlPrompt}
+            onChange={(e) =>
+              setNlPrompt(e.target.value.slice(0, PARSE_TIMER_MAX_PROMPT_CHARS))
+            }
+            rows={5}
+            maxLength={PARSE_TIMER_MAX_PROMPT_CHARS}
+            disabled={isParsing}
+            placeholder="I quit sugar on March 15, 2024. Track elapsed time with weekly milestones and a rain sound."
+            className="w-full resize-y rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 disabled:opacity-60"
+          />
+          <div className="mt-1 mb-3 text-right text-[10px] text-app-muted">
+            {nlPrompt.length}/{PARSE_TIMER_MAX_PROMPT_CHARS}
+          </div>
+          <ErrorBanner message={error} onDismiss={() => setError(null)} />
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleAiParse}
+              disabled={isParsing}
+              className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-black transition disabled:opacity-50"
+              style={{
+                backgroundColor: theme.primary,
+                boxShadow: `0 0 20px ${theme.glow}`,
+              }}
+            >
+              {isParsing ? "Generating draft..." : "Generate draft"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                // Cancel in-flight parse so a late response cannot overwrite the form
+                parseRequestId.current += 1;
+                setIsParsing(false);
+                setError(null);
+                setStep("form");
+              }}
+              className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg"
+            >
+              {isParsing ? "Cancel" : "Skip"}
+            </button>
+          </div>
         </>
       ) : (
         <>
           <div className="mb-4 flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setStep("template")}
+              onClick={() =>
+                setStep(aiAssumptions.length || nlPrompt ? "describe" : "template")
+              }
               className="text-app-muted hover:text-app-fg"
             >
               &larr;
@@ -220,8 +417,34 @@ export default function CreateTimerModal({
             <h2 className="text-lg font-bold text-app-fg">Create Timer</h2>
           </div>
 
+          {aiAssumptions.length > 0 && (
+            <div className="mb-4 rounded-xl border border-app-border bg-app-surface px-3 py-2.5">
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-app-fg">
+                  AI draft ready — review before creating
+                </span>
+                {aiConfidence && (
+                  <span className="text-[10px] uppercase tracking-wide text-app-muted">
+                    {aiConfidence} confidence
+                  </span>
+                )}
+              </div>
+              <ul className="list-inside list-disc space-y-0.5 text-[11px] text-app-muted">
+                {aiAssumptions.map((a, i) => (
+                  <li key={`${i}-${a.slice(0, 24)}`}>{a}</li>
+                ))}
+              </ul>
+              {milestoneConfig.customMilestones.length > 0 && (
+                <p className="mt-2 text-[11px] text-app-muted">
+                  {milestoneConfig.customMilestones.length} milestone
+                  {milestoneConfig.customMilestones.length === 1 ? "" : "s"}{" "}
+                  included
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="space-y-4">
-            {/* Title + Icon */}
             <div className="flex gap-3">
               <div className="flex-1">
                 <label className="mb-1 block text-xs text-app-muted">
@@ -244,13 +467,12 @@ export default function CreateTimerModal({
                   type="text"
                   value={icon}
                   onChange={(e) => setIcon(e.target.value)}
-                  maxLength={4}
+                  maxLength={8}
                   className="w-full rounded-xl border border-app-border bg-app-input px-3 py-2.5 text-center text-lg outline-none focus:border-app-fg/25"
                 />
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">
                 Description (optional)
@@ -265,7 +487,6 @@ export default function CreateTimerModal({
               />
             </div>
 
-            {/* Mode */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">Mode</label>
               <div className="flex gap-2">
@@ -273,7 +494,7 @@ export default function CreateTimerModal({
                   <button
                     key={m}
                     type="button"
-                    onClick={() => setMode(m)}
+                    onClick={() => handleModeChange(m)}
                     className={`flex-1 rounded-xl border px-3 py-2 text-xs font-medium transition ${mode === m ? "border-app-fg/25 bg-app-surface-strong text-app-fg" : "border-app-border text-app-muted hover:text-app-fg"}`}
                   >
                     {m === "elapsed" ? "Elapsed (count up)" : "Countdown"}
@@ -282,7 +503,6 @@ export default function CreateTimerModal({
               </div>
             </div>
 
-            {/* Date */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">
                 {mode === "elapsed"
@@ -307,7 +527,6 @@ export default function CreateTimerModal({
               />
             </div>
 
-            {/* Category */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">
                 Category
@@ -325,7 +544,6 @@ export default function CreateTimerModal({
               </select>
             </div>
 
-            {/* Tags */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">
                 Tags (comma separated)
@@ -339,7 +557,6 @@ export default function CreateTimerModal({
               />
             </div>
 
-            {/* Color */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">Color</label>
               <div className="flex flex-wrap gap-2">
@@ -362,7 +579,6 @@ export default function CreateTimerModal({
               </div>
             </div>
 
-            {/* Sound (alert / local ambient) */}
             <div>
               <label className="mb-1 block text-xs text-app-muted">
                 Alert / local sound
@@ -388,7 +604,6 @@ export default function CreateTimerModal({
 
             <ErrorBanner message={error} onDismiss={() => setError(null)} />
 
-            {/* Actions */}
             <div className="flex gap-3 pt-1">
               <button
                 type="button"
@@ -404,10 +619,7 @@ export default function CreateTimerModal({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  reset();
-                  onClose();
-                }}
+                onClick={handleClose}
                 className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg"
               >
                 Cancel
