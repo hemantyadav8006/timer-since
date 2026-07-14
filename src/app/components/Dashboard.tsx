@@ -228,6 +228,7 @@ export default function Dashboard() {
 
   const handleStop = useCallback(
     (timer: TimerItem) => {
+      if (timer.stopped) return;
       const now = Date.now();
       const segmentStart =
         timer.streaks.length > 0
@@ -251,6 +252,7 @@ export default function Dashboard() {
 
   const handleResync = useCallback(
     (timer: TimerItem) => {
+      if (!timer.stopped) return;
       void quickUpdate(timer._id, buildResyncPayload(timer));
     },
     [quickUpdate],

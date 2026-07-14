@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import "server-only";
 import { migrateExistingUsersVerified } from "@/lib/migrations/verify-existing-users";
 
 declare global {

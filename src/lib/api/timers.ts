@@ -125,7 +125,10 @@ export async function fetchSharedTimer(shareId: string): Promise<TimerItem> {
     | { timer: PublicTimerDto }
     | { error: string };
   if (!res.ok || "error" in data) {
-    throw new Error("error" in data ? data.error : "Timer not found.");
+    const message = "error" in data ? data.error : "Timer not found.";
+    const err = new Error(message) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
   return mapSharedTimer(data.timer);
 }
