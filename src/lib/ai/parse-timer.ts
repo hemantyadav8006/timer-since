@@ -139,8 +139,15 @@ function providerErrorToParseError(err: unknown): ParseTimerError {
   }
   const message =
     err instanceof Error ? err.message : "Failed to parse timer description.";
-  const short = message.split("\n")[0]?.slice(0, 280) || message;
-  return new ParseTimerError(short, "AI_PROVIDER_ERROR", 502);
+  // Never surface raw provider internals to clients.
+  const generic =
+    message.toLowerCase().includes("api key") ||
+    message.toLowerCase().includes("permission") ||
+    message.length > 180
+      ? "AI provider request failed. Please try again."
+      : message.split("\n")[0]?.slice(0, 180) ||
+        "AI provider request failed. Please try again.";
+  return new ParseTimerError(generic, "AI_PROVIDER_ERROR", 502);
 }
 
 export function isAiConfigured(): boolean {
@@ -466,13 +473,14 @@ async function produceValidatedDraft(
  */
 export async function parseTimerFromPrompt(
   prompt: string,
-  opts: { nowMs?: number; model?: string } = {},
+  opts: { nowMs?: number; model?: string; userId?: string } = {},
 ): Promise<ParseTimerResult> {
   const nowMs = opts.nowMs ?? Date.now();
   const preferredModel = opts.model?.trim() || AI_PARSE_MODEL;
+  const userScope = opts.userId?.trim() || "anon";
   const started = Date.now();
   const cacheKey = hashParsePrompt(
-    `${preferredModel}|${prompt}`,
+    `${userScope}|${preferredModel}|${prompt}`,
     nowBucket(nowMs),
   );
 

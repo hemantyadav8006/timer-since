@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useCallback, useEffect, useRef, useState, use } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import AppBackground from "@/components/ui/AppBackground";
@@ -16,6 +16,9 @@ import { useTimerTick } from "@/hooks/useTimerTick";
 import { isValidYouTubeVideoId } from "@/lib/youtube-shared";
 import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth-routes";
 
+/** How often the share page re-fetches so pause/resume stays in sync with the owner. */
+const SHARE_SYNC_INTERVAL_MS = 3_000;
+
 export default function SharedTimerPage({
   params,
 }: {
@@ -27,17 +30,68 @@ export default function SharedTimerPage({
   const [timer, setTimer] = useState<TimerItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const now = useTimerTick(timer?.stopped ?? true);
+  const hasLoadedRef = useRef(false);
+  const syncGenerationRef = useRef(0);
 
   const sharePath = `/share/${shareId}`;
   const loginHref = `${LOGIN_PATH}?from=${encodeURIComponent(sharePath)}`;
 
+  const syncTimer = useCallback(
+    async (opts?: { initial?: boolean }) => {
+      const generation = ++syncGenerationRef.current;
+      try {
+        const next = await fetchSharedTimer(shareId);
+        if (generation !== syncGenerationRef.current) return;
+        setTimer(next);
+        setError(null);
+        hasLoadedRef.current = true;
+      } catch (e) {
+        if (generation !== syncGenerationRef.current) return;
+        const message = e instanceof Error ? e.message : "Timer not found.";
+        const status =
+          e instanceof Error && "status" in e
+            ? Number((e as Error & { status?: number }).status)
+            : undefined;
+        const gone =
+          status === 404 || /not found|not public|unavailable/i.test(message);
+
+        // Unpublish/delete should clear the public snapshot; keep last view on
+        // transient network errors after the first successful load.
+        if (gone && hasLoadedRef.current) {
+          setTimer(null);
+          setError(message);
+          hasLoadedRef.current = false;
+          return;
+        }
+
+        if (opts?.initial || !hasLoadedRef.current) {
+          setError(message);
+        }
+      }
+    },
+    [shareId],
+  );
+
   useEffect(() => {
-    fetchSharedTimer(shareId)
-      .then(setTimer)
-      .catch((e) =>
-        setError(e instanceof Error ? e.message : "Timer not found."),
-      );
-  }, [shareId]);
+    hasLoadedRef.current = false;
+    syncGenerationRef.current += 1;
+    void syncTimer({ initial: true });
+
+    const id = window.setInterval(() => {
+      if (document.visibilityState === "visible") void syncTimer();
+    }, SHARE_SYNC_INTERVAL_MS);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void syncTimer();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      syncGenerationRef.current += 1;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [syncTimer]);
 
   const elapsedMs = timer ? computeElapsedMs(timer, now) : 0;
   const noop = () => {};

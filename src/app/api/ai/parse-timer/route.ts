@@ -16,12 +16,18 @@ import {
   AI_API_KEY_ENV,
   AI_BLOCKED_MODEL_IDS,
   AI_MODEL_ENV,
+  AI_PARSE_FALLBACK_MODELS,
   AI_PARSE_MODEL_DEFAULT,
 } from "@/lib/ai/constants";
 import { getCachedParse, hashParsePrompt, nowBucket } from "@/lib/ai/cache";
 import { isAllowedModelId, listGeminiModels } from "@/lib/ai/list-models";
 
 export const runtime = "nodejs";
+
+const SAFE_FALLBACK_MODEL_IDS = new Set<string>([
+  AI_PARSE_MODEL_DEFAULT,
+  ...AI_PARSE_FALLBACK_MODELS,
+]);
 
 function resolveRoutePreferredModel(id: string): string {
   const trimmed = id.trim();
@@ -32,6 +38,13 @@ function resolveRoutePreferredModel(id: string): string {
     return AI_PARSE_MODEL_DEFAULT;
   }
   return trimmed;
+}
+
+function isSafeModelWithoutCatalog(id: string): boolean {
+  return (
+    SAFE_FALLBACK_MODEL_IDS.has(id) &&
+    !(AI_BLOCKED_MODEL_IDS as readonly string[]).includes(id)
+  );
 }
 
 export async function POST(req: Request) {
@@ -103,18 +116,17 @@ export async function POST(req: Request) {
         preferredModel = requestedModel;
       }
     } catch {
-      preferredModel =
-        requestedModel === "gemini-2.5-flash" ||
-        requestedModel === "gemini-3-flash"
-          ? AI_PARSE_MODEL_DEFAULT
-          : requestedModel;
+      // Don't accept arbitrary model ids when the catalog is unavailable.
+      preferredModel = isSafeModelWithoutCatalog(requestedModel)
+        ? requestedModel
+        : AI_PARSE_MODEL_DEFAULT;
     }
   }
 
   // Cached hits do not consume rate-limit quota (still auth-gated).
   const nowMs = Date.now();
   const cacheKey = hashParsePrompt(
-    `${preferredModel}|${prompt}`,
+    `${auth.userId}|${preferredModel}|${prompt}`,
     nowBucket(nowMs),
   );
   const cacheHit = getCachedParse(cacheKey);
@@ -140,6 +152,7 @@ export async function POST(req: Request) {
     const result = await parseTimerFromPrompt(prompt, {
       nowMs,
       model: preferredModel,
+      userId: auth.userId,
     });
     await logAiUsage({
       userId: auth.userId,

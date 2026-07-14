@@ -13,6 +13,9 @@ const DEFAULT_MILESTONES: MilestoneDefinition[] = [
   { label: "30 Days", durationMs: 2_592_000_000, icon: "🏅" },
   { label: "100 Days", durationMs: 8_640_000_000, icon: "💯" },
   { label: "365 Days", durationMs: 31_536_000_000, icon: "🏆" },
+  { label: "2 Years", durationMs: 63_072_000_000, icon: "💎" },
+  { label: "3 Years", durationMs: 94_608_000_000, icon: "👑" },
+  { label: "5 Years", durationMs: 157_680_000_000, icon: "🌹" },
 ];
 
 export function getMilestonesForTimer(timer: TimerItem): MilestoneDefinition[] {
