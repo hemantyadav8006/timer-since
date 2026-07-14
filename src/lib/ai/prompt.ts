@@ -1,9 +1,5 @@
 import { TEMPLATES } from "@/lib/templates";
-import {
-  TIMER_CATEGORIES,
-  TIMER_MODES,
-  TIMER_SOUNDS,
-} from "@/lib/ai/schema";
+import { TIMER_CATEGORIES, TIMER_MODES, TIMER_SOUNDS } from "@/lib/ai/schema";
 
 const FEW_SHOT_TEMPLATES = TEMPLATES.filter((t) => t.name !== "custom").slice(
   0,
@@ -39,13 +35,14 @@ HARD RULES:
 7. For mode "elapsed": startDate must be <= now; targetDate must be null.
 8. For mode "countdown": targetDate must be > now; startDate should be now (${nowMs}) unless the user specifies otherwise.
 9. Resolve relative phrases ("yesterday", "last Monday", "in 90 days", "starting today") using now.
-10. Prefer 3–6 meaningful milestones when the goal implies progress markers; otherwise return an empty milestones array.
-11. milestone durationMs is an offset from the timer start (elapsed) or remaining-to-target style checkpoints measured as positive durations in ms.
-12. List assumptions you made (e.g. "Assumed start date = today") in assumptions[].
-13. Set confidence to high/medium/low based on how explicit the user was.
-14. Color must be a hex like #00FF88. Pick a sensible accent for the theme of the goal.
-15. icon should be a single emoji when possible.
-16. Never include youtube fields. Never invent user identity or medical advice.
+10. Prefer 3–6 meaningful milestones when the goal implies progress markers; if the user lists milestones, include all of them. Otherwise return an empty milestones array.
+11. milestone durationMs is an offset from the timer start (elapsed) or remaining-to-target style checkpoints measured as positive durations in ms (e.g. 1 day left = 86400000).
+12. Always return every schema field: title, description, icon, color, category, tags, mode, startDate, targetDate, sound, milestones, assumptions, confidence.
+13. List assumptions you made (e.g. "Assumed start date = today") in assumptions[].
+14. Set confidence to high/medium/low based on how explicit the user was.
+15. Color must be a hex like #00FF88. Pick a sensible accent for the theme of the goal.
+16. icon should be a single emoji when possible.
+17. Never include youtube fields. Never invent user identity or medical advice.
 
 Example domain patterns (few-shot guidance, not user data):
 ${formatTemplateExamples()}
@@ -56,7 +53,10 @@ If the request is nonsense or impossible to map, still return a best-effort pers
 /**
  * Wrap user text so prompt-injection attempts stay inside a data boundary.
  */
-export function buildParseTimerUserPrompt(userText: string, nowMs: number): string {
+export function buildParseTimerUserPrompt(
+  userText: string,
+  nowMs: number,
+): string {
   return `now_ms=${nowMs}
 now_iso=${new Date(nowMs).toISOString()}
 

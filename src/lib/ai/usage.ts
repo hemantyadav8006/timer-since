@@ -1,3 +1,5 @@
+import "server-only";
+
 import connectMongo from "@/lib/mongodb";
 import { AiUsage } from "@/models/AiUsage";
 

@@ -16,8 +16,6 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 - **Extras** — Breathing exercise, countdown confetti celebration, browser notifications
 - **AI timer draft** — Describe a timer in natural language; review/edit a structured draft before creating (requires `GOOGLE_GENERATIVE_AI_API_KEY`)
 
-
-
 ## Tech Stack
 
 - **Framework:** Next.js 16 (App Router)
@@ -26,10 +24,7 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 - **Auth:** bcrypt password hashing, custom JWT in httpOnly cookie
 - **YouTube:** Data API v3 (search, server-side) + IFrame Player API (playback)
 
-
-
 ## Routes
-
 
 | Route              | Access    | Description                           |
 | ------------------ | --------- | ------------------------------------- |
@@ -41,20 +36,15 @@ A multi-purpose timer platform built with Next.js and MongoDB. Track elapsed tim
 | `/dashboard`       | Protected | Main timer dashboard                  |
 | `/share/[shareId]` | Public    | Read-only shared timer view           |
 
-
 API routes under `/api/timers`, `/api/entries`, `/api/analytics`, `/api/export`, `/api/youtube`, and `/api/ai` require authentication. `/api/share/*` and `/api/auth/*` are public.
 
 ## Getting Started
-
-
 
 ### 1. Install dependencies
 
 ```bash
 npm install
 ```
-
-
 
 ### 2. Configure environment
 
@@ -89,30 +79,26 @@ YOUTUBE_API_KEY=your_youtube_api_key
 # Google Gemini — optional; enables natural-language timer creation in Create Timer
 # Get a free key at https://aistudio.google.com/apikey (server-only — never NEXT_PUBLIC_)
 GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
-# Optional model override (default: gemini-2.5-flash)
-# GEMINI_MODEL=gemini-2.5-flash
+# Optional model override (default: gemini-flash-latest)
+# GEMINI_MODEL=gemini-flash-latest
 ```
 
-
-| Variable                        | Required | Description                                                |
-| ------------------------------- | -------- | ---------------------------------------------------------- |
-| `WEBSITE_ENV`                   | Yes      | `dev` or `prod` — selects MongoDB credentials              |
-| `MONGODB_URI_DEV`               | Dev      | MongoDB connection string for development                  |
-| `MONGODB_DB_NAME_DEV`           | Dev      | Database name for development                              |
-| `MONGODB_URI`                   | Prod     | MongoDB connection string for production                   |
-| `MONGODB_DB_NAME`               | Prod     | Database name for production                               |
-| `JWT_SECRET`                    | Prod     | Secret for signing session tokens                          |
-| `EMAIL_HOST`                    | Yes      | SMTP host (e.g. `smtp.gmail.com`)                          |
-| `EMAIL_PORT`                    | Yes      | SMTP port (587 for TLS)                                    |
-| `EMAIL_USER`                    | Yes      | Gmail address                                              |
-| `EMAIL_PASS`                    | Yes      | Gmail app password (spaces are stripped automatically)     |
-| `EMAIL_FROM`                    | Yes      | Sender address shown in emails                             |
-| `YOUTUBE_API_KEY`               | No       | Server-only key for YouTube search (`/api/youtube/search`) |
-| `GOOGLE_GENERATIVE_AI_API_KEY`  | No       | Server-only Gemini key for AI timer draft                  |
-| `GEMINI_MODEL`                  | No       | Model id (default `gemini-2.5-flash`)                      |
-
-
-
+| Variable                       | Required | Description                                                |
+| ------------------------------ | -------- | ---------------------------------------------------------- |
+| `WEBSITE_ENV`                  | Yes      | `dev` or `prod` — selects MongoDB credentials              |
+| `MONGODB_URI_DEV`              | Dev      | MongoDB connection string for development                  |
+| `MONGODB_DB_NAME_DEV`          | Dev      | Database name for development                              |
+| `MONGODB_URI`                  | Prod     | MongoDB connection string for production                   |
+| `MONGODB_DB_NAME`              | Prod     | Database name for production                               |
+| `JWT_SECRET`                   | Prod     | Secret for signing session tokens                          |
+| `EMAIL_HOST`                   | Yes      | SMTP host (e.g. `smtp.gmail.com`)                          |
+| `EMAIL_PORT`                   | Yes      | SMTP port (587 for TLS)                                    |
+| `EMAIL_USER`                   | Yes      | Gmail address                                              |
+| `EMAIL_PASS`                   | Yes      | Gmail app password (spaces are stripped automatically)     |
+| `EMAIL_FROM`                   | Yes      | Sender address shown in emails                             |
+| `YOUTUBE_API_KEY`              | No       | Server-only key for YouTube search (`/api/youtube/search`) |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | No       | Server-only Gemini key for AI timer draft                  |
+| `GEMINI_MODEL`                 | No       | Model id (default `gemini-flash-latest`)                   |
 
 ### 3. Run the dev server
 
@@ -147,10 +133,15 @@ Timers can store a YouTube **video ID** (plus title/thumbnail metadata) — not 
 Create Timer → **Describe with AI** turns a sentence into a validated timer draft (title, mode, dates, category, sound, milestones). You always review and confirm before `POST /api/timers` runs.
 
 1. Create a free API key in [Google AI Studio](https://aistudio.google.com/apikey) and set `GOOGLE_GENERATIVE_AI_API_KEY` in `.env` (never `NEXT_PUBLIC_`).
-2. Optionally set `GEMINI_MODEL` (default `gemini-2.5-flash`). On quota or unavailable-model errors, the API tries `gemini-3-flash`. Do not use `*-flash-lite` — those are closed to new API users.
+2. Optionally set `GEMINI_MODEL` (default `gemini-flash-latest`). New free-tier keys often get 404 for pinned ids like `gemini-2.5-flash` (“no longer available to new users”). On quota/unavailable errors, the API tries `gemini-3.5-flash`, then `gemini-3-flash-preview`, then `gemini-3.1-flash-lite`.
 3. Without a key, the create flow still works via templates / scratch; AI returns 503.
 
 Guards: auth required, 10 requests/user/hour, 1000-char prompt cap, structured JSON + domain validation, 20s timeout, token/cost logging to Mongo `AiUsage`.
+
+On the Describe with AI step you can:
+
+- Pick a Gemini model from `GET /api/ai/models` (live catalog for your API key)
+- See **app-tracked** token/request totals from `GET /api/ai/usage` (Gemini does not expose remaining free-tier tokens; this is your local usage ledger)
 
 Eval offline (and live if keyed):
 
@@ -160,18 +151,14 @@ npm run eval:ai
 
 ## Scripts
 
-
-| Command          | Description                                      |
-| ---------------- | ------------------------------------------------ |
-| `npm run dev`    | Start development server                         |
-| `npm run build`  | Production build                                 |
-| `npm start`      | Start production server                          |
-| `npm run lint`   | Run ESLint                                       |
-| `npm run format` | Format code with Prettier                        |
-| `npm run eval:ai`| Offline (+ optional live) AI parse-timer eval    |
-
-
-
+| Command           | Description                                   |
+| ----------------- | --------------------------------------------- |
+| `npm run dev`     | Start development server                      |
+| `npm run build`   | Production build                              |
+| `npm start`       | Start production server                       |
+| `npm run lint`    | Run ESLint                                    |
+| `npm run format`  | Format code with Prettier                     |
+| `npm run eval:ai` | Offline (+ optional live) AI parse-timer eval |
 
 ## Project Structure
 
@@ -191,8 +178,6 @@ src/
 └── proxy.ts           # Route protection & session checks (network proxy)
 ```
 
-
-
 ## Auth Flow
 
 1. Unauthenticated users are redirected to `/login` by the proxy layer and client-side route guards.
@@ -203,4 +188,3 @@ src/
 6. On page load, `AuthProvider` validates the session via `GET /api/auth/me`.
 7. Logout or session expiry clears the cookie and redirects to `/login`.
 8. Timer data is scoped per user — all CRUD operations enforce ownership server-side.
-

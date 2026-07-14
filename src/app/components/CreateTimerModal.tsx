@@ -5,7 +5,13 @@ import { useTheme } from "@/app/providers/ThemeProvider";
 import { TEMPLATES } from "@/lib/templates";
 import { toDatetimeLocalValue, isValidDatetimeLocal } from "@/lib/utils";
 import { createTimer } from "@/lib/api/timers";
-import { parseTimerPrompt } from "@/lib/api/ai";
+import {
+  parseTimerPrompt,
+  fetchAiModels,
+  fetchAiUsage,
+  type AiUsageResponse,
+} from "@/lib/api/ai";
+import type { GeminiModelInfo } from "@/types/ai";
 import {
   CATEGORIES,
   type TimerItem,
@@ -19,7 +25,12 @@ import ErrorBanner from "@/components/ui/ErrorBanner";
 import YouTubeTrackPicker, {
   type YouTubeTrackSelection,
 } from "./YouTubeTrackPicker";
-import { PARSE_TIMER_MAX_PROMPT_CHARS } from "@/lib/ai/constants";
+import {
+  AI_PARSE_MODEL_DEFAULT,
+  PARSE_TIMER_MAX_PROMPT_CHARS,
+} from "@/lib/ai/constants";
+import AiPromptBox from "@/components/ui/ai-prompt/AiPromptBox";
+import { AnimatePresence, motion } from "framer-motion";
 
 type CreateTimerModalProps = {
   open: boolean;
@@ -28,6 +39,8 @@ type CreateTimerModalProps = {
 };
 
 type Step = "template" | "describe" | "form";
+
+const AI_MODEL_STORAGE_KEY = "timer_ai_model";
 
 const PRESET_COLORS = [
   "#00FF88",
@@ -41,6 +54,13 @@ const PRESET_COLORS = [
   "#818CF8",
   "#E5E5E5",
 ];
+
+function formatTokens(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
 
 export default function CreateTimerModal({
   open,
@@ -77,6 +97,16 @@ export default function CreateTimerModal({
   const [aiConfidence, setAiConfidence] = useState<
     "high" | "medium" | "low" | null
   >(null);
+  const [aiModels, setAiModels] = useState<GeminiModelInfo[]>([]);
+  const [selectedModel, setSelectedModel] = useState(AI_PARSE_MODEL_DEFAULT);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [aiUsage, setAiUsage] = useState<AiUsageResponse | null>(null);
+  const [lastParseUsage, setLastParseUsage] = useState<{
+    model: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  } | null>(null);
 
   const parseRequestId = useRef(0);
   const stepRef = useRef<Step>(step);
@@ -84,11 +114,65 @@ export default function CreateTimerModal({
 
   useEffect(() => {
     if (!open) {
-      // Invalidate in-flight AI responses when modal closes
       parseRequestId.current += 1;
       setIsParsing(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || step !== "describe") return;
+    let cancelled = false;
+
+    async function loadAiMeta() {
+      setModelsLoading(true);
+      try {
+        const stored =
+          typeof window !== "undefined"
+            ? localStorage.getItem(AI_MODEL_STORAGE_KEY)
+            : null;
+        const [modelsRes, usageRes] = await Promise.all([
+          fetchAiModels(),
+          fetchAiUsage().catch(() => null),
+        ]);
+        if (cancelled) return;
+        setAiModels(modelsRes.models);
+        const preferred =
+          (stored &&
+          !["gemini-2.5-flash", "gemini-3-flash"].includes(stored) &&
+          modelsRes.models.some((m) => m.id === stored)
+            ? stored
+            : null) ||
+          (modelsRes.models.some((m) => m.id === modelsRes.defaultModel)
+            ? modelsRes.defaultModel
+            : modelsRes.models[0]?.id) ||
+          AI_PARSE_MODEL_DEFAULT;
+        setSelectedModel(preferred);
+        if (stored && ["gemini-2.5-flash", "gemini-3-flash"].includes(stored)) {
+          try {
+            localStorage.setItem(AI_MODEL_STORAGE_KEY, preferred);
+          } catch {
+            /* ignore */
+          }
+        }
+        if (usageRes) setAiUsage(usageRes);
+      } catch (e) {
+        if (!cancelled) {
+          setError(
+            e instanceof Error
+              ? e.message
+              : "Could not load Gemini models. AI may be unavailable right now.",
+          );
+        }
+      } finally {
+        if (!cancelled) setModelsLoading(false);
+      }
+    }
+
+    void loadAiMeta();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, step]);
 
   function selectTemplate(tmpl: (typeof TEMPLATES)[0]) {
     setTitle(tmpl.defaultName);
@@ -177,13 +261,25 @@ export default function CreateTimerModal({
     const requestId = ++parseRequestId.current;
     try {
       setIsParsing(true);
-      const result = await parseTimerPrompt(text);
+      const result = await parseTimerPrompt(text, selectedModel);
 
       // Ignore stale responses (user navigated away, closed modal, or re-ran)
       if (requestId !== parseRequestId.current) return;
       if (stepRef.current !== "describe") return;
 
-      const { payload, assumptions, confidence } = result;
+      const { payload, assumptions, confidence, meta } = result;
+
+      setLastParseUsage({
+        model: meta.model,
+        promptTokens: meta.usage.promptTokens,
+        completionTokens: meta.usage.completionTokens,
+        totalTokens: meta.usage.totalTokens,
+      });
+      void fetchAiUsage()
+        .then((u) => {
+          if (requestId === parseRequestId.current) setAiUsage(u);
+        })
+        .catch(() => {});
 
       setTitle(payload.title);
       setDescription(payload.description ?? "");
@@ -290,21 +386,29 @@ export default function CreateTimerModal({
           <h2 className="mb-4 text-lg font-bold text-app-fg">
             Choose a Template
           </h2>
-          <button
+          <motion.button
             type="button"
+            whileHover={{ scale: 1.01, y: -1 }}
+            whileTap={{ scale: 0.985 }}
             onClick={() => {
               setError(null);
               setStep("describe");
             }}
-            className="mb-3 w-full rounded-xl border border-app-border bg-app-surface px-4 py-3 text-left transition hover:bg-app-surface-strong"
+            className="relative mb-3 w-full overflow-hidden rounded-2xl border border-transparent p-px text-left"
+            style={{
+              backgroundImage:
+                "linear-gradient(120deg, #38bdf8, #a78bfa, #22d3ee)",
+            }}
           >
-            <div className="text-sm font-semibold text-app-fg">
-              Describe with AI
-            </div>
-            <div className="mt-0.5 text-xs text-app-muted">
-              e.g. &ldquo;90 days sober since March 1, rain sound&rdquo;
-            </div>
-          </button>
+            <span className="flex w-full flex-col gap-0.5 rounded-[15px] bg-[color-mix(in_srgb,var(--app-modal-bg)_92%,transparent)] px-4 py-3 backdrop-blur-md">
+              <span className="text-sm font-semibold text-app-fg">
+                ✨ Describe with AI
+              </span>
+              <span className="text-xs text-app-muted">
+                e.g. &ldquo;90 days sober since March 1, rain sound&rdquo;
+              </span>
+            </span>
+          </motion.button>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {TEMPLATES.map((tmpl) => (
               <button
@@ -353,54 +457,154 @@ export default function CreateTimerModal({
             >
               &larr;
             </button>
-            <h2 className="text-lg font-bold text-app-fg">Describe your timer</h2>
+            <div>
+              <h2 className="text-lg font-bold text-app-fg">Ask AI</h2>
+              <p className="text-xs text-app-muted">
+                Describe a timer in plain language — review before creating
+              </p>
+            </div>
           </div>
-          <p className="mb-3 text-xs text-app-muted">
-            AI drafts a timer you can review and edit before creating. Nothing is
-            saved until you confirm.
-          </p>
-          <textarea
+
+          <AiPromptBox
             value={nlPrompt}
-            onChange={(e) =>
-              setNlPrompt(e.target.value.slice(0, PARSE_TIMER_MAX_PROMPT_CHARS))
-            }
-            rows={5}
+            onChange={setNlPrompt}
+            isLoading={isParsing}
+            disabled={modelsLoading}
             maxLength={PARSE_TIMER_MAX_PROMPT_CHARS}
-            disabled={isParsing}
-            placeholder="I quit sugar on March 15, 2024. Track elapsed time with weekly milestones and a rain sound."
-            className="w-full resize-y rounded-xl border border-app-border bg-app-input px-4 py-3 text-sm text-app-fg outline-none focus:border-app-fg/25 disabled:opacity-60"
+            onSubmit={() => {
+              void handleAiParse();
+            }}
+            onCancel={() => {
+              parseRequestId.current += 1;
+              setIsParsing(false);
+              setError(null);
+            }}
+            footer={
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs text-app-muted">
+                    Model
+                  </label>
+                  <select
+                    value={selectedModel}
+                    disabled={
+                      isParsing || modelsLoading || aiModels.length === 0
+                    }
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setSelectedModel(next);
+                      try {
+                        localStorage.setItem(AI_MODEL_STORAGE_KEY, next);
+                      } catch {
+                        /* ignore */
+                      }
+                    }}
+                    className="w-full rounded-xl border border-app-border bg-app-input/80 px-3 py-2.5 text-sm text-app-fg outline-none backdrop-blur-sm disabled:opacity-60"
+                  >
+                    {aiModels.length === 0 ? (
+                      <option value={selectedModel}>
+                        {modelsLoading ? "Loading models…" : selectedModel}
+                      </option>
+                    ) : (
+                      aiModels.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.id}
+                          {m.inputTokenLimit
+                            ? ` · ctx ${formatTokens(m.inputTokenLimit)}`
+                            : ""}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                <AnimatePresence initial={false}>
+                  {aiUsage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className="rounded-2xl border border-app-border/80 bg-app-surface/80 px-3 py-2.5 text-[11px] text-app-muted backdrop-blur-sm"
+                    >
+                      <div className="mb-1 font-semibold text-app-fg">
+                        App-tracked AI usage
+                      </div>
+                      <p className="mb-2 text-[10px] leading-snug">
+                        {aiUsage.note}
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-4">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide">
+                            Today
+                          </div>
+                          <div className="text-app-fg">
+                            {formatTokens(aiUsage.today.totalTokens)} tok
+                          </div>
+                          <div>{aiUsage.today.requests} req</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide">
+                            All time
+                          </div>
+                          <div className="text-app-fg">
+                            {formatTokens(aiUsage.allTime.totalTokens)} tok
+                          </div>
+                          <div>{aiUsage.allTime.requests} req</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide">
+                            This hour
+                          </div>
+                          <div className="text-app-fg">
+                            {aiUsage.appRateLimit.requestsLastHour}/
+                            {aiUsage.appRateLimit.maxRequestsPerHour} req
+                          </div>
+                          <div>
+                            {formatTokens(aiUsage.appRateLimit.tokensLastHour)}{" "}
+                            tok
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wide">
+                            Prompt / out
+                          </div>
+                          <div className="text-app-fg">
+                            {formatTokens(aiUsage.today.promptTokens)} /{" "}
+                            {formatTokens(aiUsage.today.completionTokens)}
+                          </div>
+                          <div>today</div>
+                        </div>
+                      </div>
+                      {lastParseUsage && (
+                        <div className="mt-2 border-t border-app-border pt-2 text-[10px]">
+                          Last draft · {lastParseUsage.model}:{" "}
+                          {lastParseUsage.totalTokens} tokens (
+                          {lastParseUsage.promptTokens} in /{" "}
+                          {lastParseUsage.completionTokens} out)
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <ErrorBanner message={error} onDismiss={() => setError(null)} />
+
+                <button
+                  type="button"
+                  disabled={isParsing}
+                  onClick={() => {
+                    parseRequestId.current += 1;
+                    setIsParsing(false);
+                    setError(null);
+                    setStep("form");
+                  }}
+                  className="w-full rounded-xl border border-app-border py-2 text-sm text-app-muted hover:text-app-fg disabled:opacity-50"
+                >
+                  Skip — fill manually
+                </button>
+              </div>
+            }
           />
-          <div className="mt-1 mb-3 text-right text-[10px] text-app-muted">
-            {nlPrompt.length}/{PARSE_TIMER_MAX_PROMPT_CHARS}
-          </div>
-          <ErrorBanner message={error} onDismiss={() => setError(null)} />
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={handleAiParse}
-              disabled={isParsing}
-              className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-black transition disabled:opacity-50"
-              style={{
-                backgroundColor: theme.primary,
-                boxShadow: `0 0 20px ${theme.glow}`,
-              }}
-            >
-              {isParsing ? "Generating draft..." : "Generate draft"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                // Cancel in-flight parse so a late response cannot overwrite the form
-                parseRequestId.current += 1;
-                setIsParsing(false);
-                setError(null);
-                setStep("form");
-              }}
-              className="rounded-xl border border-app-border px-4 py-3 text-sm text-app-muted hover:text-app-fg"
-            >
-              {isParsing ? "Cancel" : "Skip"}
-            </button>
-          </div>
         </>
       ) : (
         <>
@@ -408,7 +612,9 @@ export default function CreateTimerModal({
             <button
               type="button"
               onClick={() =>
-                setStep(aiAssumptions.length || nlPrompt ? "describe" : "template")
+                setStep(
+                  aiAssumptions.length || nlPrompt ? "describe" : "template",
+                )
               }
               className="text-app-muted hover:text-app-fg"
             >
@@ -437,7 +643,9 @@ export default function CreateTimerModal({
               {milestoneConfig.customMilestones.length > 0 && (
                 <p className="mt-2 text-[11px] text-app-muted">
                   {milestoneConfig.customMilestones.length} milestone
-                  {milestoneConfig.customMilestones.length === 1 ? "" : "s"}{" "}
+                  {milestoneConfig.customMilestones.length === 1
+                    ? ""
+                    : "s"}{" "}
                   included
                 </p>
               )}

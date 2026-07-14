@@ -14,16 +14,25 @@ import { consumeAiRateLimit } from "@/lib/ai/rate-limit";
 import { logAiUsage } from "@/lib/ai/usage";
 import {
   AI_API_KEY_ENV,
+  AI_BLOCKED_MODEL_IDS,
   AI_MODEL_ENV,
   AI_PARSE_MODEL_DEFAULT,
 } from "@/lib/ai/constants";
-import {
-  getCachedParse,
-  hashParsePrompt,
-  nowBucket,
-} from "@/lib/ai/cache";
+import { getCachedParse, hashParsePrompt, nowBucket } from "@/lib/ai/cache";
+import { isAllowedModelId, listGeminiModels } from "@/lib/ai/list-models";
 
 export const runtime = "nodejs";
+
+function resolveRoutePreferredModel(id: string): string {
+  const trimmed = id.trim();
+  if (
+    !trimmed ||
+    (AI_BLOCKED_MODEL_IDS as readonly string[]).includes(trimmed)
+  ) {
+    return AI_PARSE_MODEL_DEFAULT;
+  }
+  return trimmed;
+}
 
 export async function POST(req: Request) {
   const auth = await requireAuth();
@@ -54,6 +63,14 @@ export async function POST(req: Request) {
       ? (body as { prompt: string }).prompt.trim()
       : "";
 
+  const requestedModel =
+    typeof body === "object" &&
+    body !== null &&
+    "model" in body &&
+    typeof (body as { model: unknown }).model === "string"
+      ? (body as { model: string }).model.trim()
+      : "";
+
   if (prompt.length < PARSE_TIMER_MIN_PROMPT_CHARS) {
     return NextResponse.json(
       {
@@ -72,9 +89,34 @@ export async function POST(req: Request) {
     );
   }
 
+  let preferredModel = resolveRoutePreferredModel(
+    process.env[AI_MODEL_ENV]?.trim() || AI_PARSE_MODEL_DEFAULT,
+  );
+
+  if (requestedModel) {
+    try {
+      const catalog = await listGeminiModels();
+      if (!isAllowedModelId(requestedModel, catalog)) {
+        // Fall back silently if client still has a stale/blocked model id
+        preferredModel = AI_PARSE_MODEL_DEFAULT;
+      } else {
+        preferredModel = requestedModel;
+      }
+    } catch {
+      preferredModel =
+        requestedModel === "gemini-2.5-flash" ||
+        requestedModel === "gemini-3-flash"
+          ? AI_PARSE_MODEL_DEFAULT
+          : requestedModel;
+    }
+  }
+
   // Cached hits do not consume rate-limit quota (still auth-gated).
   const nowMs = Date.now();
-  const cacheKey = hashParsePrompt(prompt, nowBucket(nowMs));
+  const cacheKey = hashParsePrompt(
+    `${preferredModel}|${prompt}`,
+    nowBucket(nowMs),
+  );
   const cacheHit = getCachedParse(cacheKey);
 
   if (!cacheHit) {
@@ -95,7 +137,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await parseTimerFromPrompt(prompt, { nowMs });
+    const result = await parseTimerFromPrompt(prompt, {
+      nowMs,
+      model: preferredModel,
+    });
     await logAiUsage({
       userId: auth.userId,
       feature: "parse-timer",
@@ -136,7 +181,7 @@ export async function POST(req: Request) {
     await logAiUsage({
       userId: auth.userId,
       feature: "parse-timer",
-      model: process.env[AI_MODEL_ENV]?.trim() || AI_PARSE_MODEL_DEFAULT,
+      model: preferredModel,
       promptTokens: 0,
       completionTokens: 0,
       totalTokens: 0,

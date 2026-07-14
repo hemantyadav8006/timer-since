@@ -1,15 +1,18 @@
 /**
  * Core NL → timer draft pipeline (server-only).
- * Provider: Google Gemini via @ai-sdk/google
+ * Provider: Google Gemini via @google/generative-ai (JSON schema).
+ * Avoids Vercel AI SDK generateObject, which hangs on this schema + free tier.
  */
 
-import { generateObject } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import "server-only";
+
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { validateTimerFields } from "@/lib/api/timer-validation";
 import {
   buildParseTimerSystemPrompt,
   buildParseTimerUserPrompt,
 } from "@/lib/ai/prompt";
+import { TIMER_DRAFT_RESPONSE_SCHEMA } from "@/lib/ai/gemini-response-schema";
 import {
   draftToCreatePayload,
   timerDraftSchema,
@@ -22,26 +25,43 @@ import {
 } from "@/lib/ai/cache";
 import {
   AI_API_KEY_ENV,
+  AI_BLOCKED_MODEL_IDS,
   AI_MODEL_ENV,
   AI_PARSE_FALLBACK_MODELS,
+  AI_PARSE_MAX_MODEL_ATTEMPTS,
   AI_PARSE_MODEL_DEFAULT,
   AI_PARSE_TIMEOUT_MS,
 } from "@/lib/ai/constants";
 
-export const AI_PARSE_MODEL =
-  process.env[AI_MODEL_ENV]?.trim() || AI_PARSE_MODEL_DEFAULT;
+export const AI_PARSE_MODEL = resolvePreferredModel(
+  process.env[AI_MODEL_ENV]?.trim() || AI_PARSE_MODEL_DEFAULT,
+);
 export { AI_PARSE_TIMEOUT_MS };
+
+function isBlockedModel(id: string): boolean {
+  return (AI_BLOCKED_MODEL_IDS as readonly string[]).includes(id);
+}
+
+function resolvePreferredModel(id: string): string {
+  const trimmed = id.trim();
+  if (!trimmed || isBlockedModel(trimmed)) return AI_PARSE_MODEL_DEFAULT;
+  return trimmed;
+}
 
 function modelCandidates(primary: string): string[] {
   const seen = new Set<string>();
   const list: string[] = [];
-  for (const m of [primary, ...AI_PARSE_FALLBACK_MODELS]) {
+  for (const m of [
+    resolvePreferredModel(primary),
+    AI_PARSE_MODEL,
+    ...AI_PARSE_FALLBACK_MODELS,
+  ]) {
     const id = m.trim();
-    if (!id || seen.has(id)) continue;
+    if (!id || seen.has(id) || isBlockedModel(id)) continue;
     seen.add(id);
     list.push(id);
   }
-  return list;
+  return list.slice(0, AI_PARSE_MAX_MODEL_ATTEMPTS);
 }
 
 function isQuotaOrRateLimitError(err: unknown): boolean {
@@ -64,15 +84,32 @@ function isModelUnavailableError(err: unknown): boolean {
     lower.includes("not available to new users") ||
     lower.includes("model not found") ||
     lower.includes("is not found") ||
-    lower.includes("invalid model")
+    lower.includes("invalid model") ||
+    lower.includes("not_found")
+  );
+}
+
+function isTimeoutError(err: unknown, aborted: boolean): boolean {
+  if (aborted) return true;
+  if (err instanceof ParseTimerError) return err.code === "AI_TIMEOUT";
+  const message = err instanceof Error ? err.message : String(err);
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("timeout") ||
+    lower.includes("timed out") ||
+    lower.includes("aborted") ||
+    lower.includes("abort")
   );
 }
 
 /** Errors where trying the next model in the fallback chain is useful. */
-function isRetriableWithFallback(err: unknown): boolean {
+function isRetriableWithFallback(err: unknown, aborted = false): boolean {
+  if (isTimeoutError(err, aborted)) return true;
   if (err instanceof ParseTimerError) {
     return (
-      err.code === "AI_QUOTA_EXCEEDED" || err.code === "AI_MODEL_UNAVAILABLE"
+      err.code === "AI_QUOTA_EXCEEDED" ||
+      err.code === "AI_MODEL_UNAVAILABLE" ||
+      err.code === "AI_TIMEOUT"
     );
   }
   return isQuotaOrRateLimitError(err) || isModelUnavailableError(err);
@@ -88,9 +125,16 @@ function providerErrorToParseError(err: unknown): ParseTimerError {
   }
   if (isModelUnavailableError(err)) {
     return new ParseTimerError(
-      "That Gemini model is not available for this API key. Trying another model or set GEMINI_MODEL in .env.",
+      "That Gemini model is not available for this API key. Trying another model, or pick gemini-flash-latest.",
       "AI_MODEL_UNAVAILABLE",
       502,
+    );
+  }
+  if (isTimeoutError(err, false)) {
+    return new ParseTimerError(
+      "AI request timed out. Please try again or switch model (gemini-flash-latest works best).",
+      "AI_TIMEOUT",
+      504,
     );
   }
   const message =
@@ -200,9 +244,7 @@ function sanitizeDraft(draft: TimerDraft, nowMs: number): TimerDraft {
   next.milestones = next.milestones
     .filter(
       (m) =>
-        m.label?.trim() &&
-        Number.isFinite(m.durationMs) &&
-        m.durationMs > 0,
+        m.label?.trim() && Number.isFinite(m.durationMs) && m.durationMs > 0,
     )
     .slice(0, 12)
     .map((m) => ({
@@ -216,6 +258,20 @@ function sanitizeDraft(draft: TimerDraft, nowMs: number): TimerDraft {
     .slice(0, 8);
 
   return next;
+}
+
+/** Drop JSON nulls so Zod defaults apply; keep targetDate null for elapsed. */
+function coerceLlmJson(raw: unknown): unknown {
+  if (Array.isArray(raw)) return raw.map(coerceLlmJson);
+  if (raw && typeof raw === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(raw)) {
+      if (value === null && key !== "targetDate") continue;
+      out[key] = coerceLlmJson(value);
+    }
+    return out;
+  }
+  return raw;
 }
 
 async function callModel(
@@ -237,63 +293,90 @@ async function callModel(
     );
   }
 
-  const google = createGoogleGenerativeAI({ apiKey });
   const system = buildParseTimerSystemPrompt(nowMs);
   const user = repairHint
     ? `${buildParseTimerUserPrompt(prompt, nowMs)}\n\nVALIDATION_ERRORS:\n${repairHint}\nFix the draft to satisfy validation.`
     : buildParseTimerUserPrompt(prompt, nowMs);
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), AI_PARSE_TIMEOUT_MS);
-
-  try {
-    const result = await generateObject({
-      model: google(modelId),
-      schema: timerDraftSchema,
-      schemaName: "TimerDraft",
-      schemaDescription: "Structured timer configuration for Time Since",
-      system,
-      prompt: user,
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: modelId,
+    systemInstruction: system,
+    generationConfig: {
       temperature: 0.2,
-      maxRetries: 0, // we handle model fallback ourselves
-      abortSignal: controller.signal,
-    });
+      responseMimeType: "application/json",
+      responseSchema: TIMER_DRAFT_RESPONSE_SCHEMA,
+    },
+  });
 
+  let timedOut = false;
+  try {
+    const result = await Promise.race([
+      model.generateContent(user),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          timedOut = true;
+          reject(new Error("AI request timed out"));
+        }, AI_PARSE_TIMEOUT_MS);
+      }),
+    ]);
+
+    const text = result.response.text();
+    let raw: unknown;
+    try {
+      raw = JSON.parse(text);
+    } catch {
+      throw new ParseTimerError(
+        "AI returned non-JSON output.",
+        "AI_SCHEMA_INVALID",
+        422,
+      );
+    }
+
+    const parsed = timerDraftSchema.safeParse(coerceLlmJson(raw));
+    if (!parsed.success) {
+      throw new ParseTimerError(
+        "AI returned an invalid draft schema.",
+        "AI_SCHEMA_INVALID",
+        422,
+      );
+    }
+
+    const meta = result.response.usageMetadata;
     const usage = {
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
+      promptTokens: meta?.promptTokenCount ?? 0,
+      completionTokens: meta?.candidatesTokenCount ?? 0,
+      totalTokens: meta?.totalTokenCount ?? 0,
     };
 
-    return { draft: result.object, usage, model: modelId };
+    return { draft: parsed.data, usage, model: modelId };
   } catch (err) {
     if (err instanceof ParseTimerError) throw err;
-    if (controller.signal.aborted) {
+    if (isTimeoutError(err, timedOut)) {
       throw new ParseTimerError(
-        "AI request timed out. Please try again or use a template.",
+        "AI request timed out. Please try again or switch model (gemini-flash-latest works best).",
         "AI_TIMEOUT",
         504,
       );
     }
     throw providerErrorToParseError(err);
-  } finally {
-    clearTimeout(timer);
   }
 }
 
 /**
- * Try primary + fallback models when free-tier quota is 0 / exhausted.
+ * Try primary + fallback models when free-tier quota / timeout / unavailable.
  */
 async function callModelWithFallback(
   prompt: string,
   nowMs: number,
   repairHint?: string,
+  preferredModel?: string,
 ): Promise<{
   draft: TimerDraft;
   usage: ParseTimerResult["usage"];
   model: string;
 }> {
-  const candidates = modelCandidates(AI_PARSE_MODEL);
+  const candidates = modelCandidates(preferredModel?.trim() || AI_PARSE_MODEL);
   let lastError: ParseTimerError | null = null;
 
   for (const modelId of candidates) {
@@ -304,9 +387,7 @@ async function callModelWithFallback(
         const code =
           err instanceof ParseTimerError ? err.code : "AI_PROVIDER_ERROR";
         lastError =
-          err instanceof ParseTimerError
-            ? err
-            : providerErrorToParseError(err);
+          err instanceof ParseTimerError ? err : providerErrorToParseError(err);
         console.warn(`[ai] ${code} on ${modelId}, trying next model…`);
         continue;
       }
@@ -327,12 +408,18 @@ async function callModelWithFallback(
 async function produceValidatedDraft(
   prompt: string,
   nowMs: number,
+  preferredModel?: string,
 ): Promise<{
   draft: TimerDraft;
   usage: ParseTimerResult["usage"];
   model: string;
 }> {
-  let { draft, usage, model } = await callModelWithFallback(prompt, nowMs);
+  let { draft, usage, model } = await callModelWithFallback(
+    prompt,
+    nowMs,
+    undefined,
+    preferredModel,
+  );
   draft = sanitizeDraft(draft, nowMs);
 
   let validationError = await validationErrorMessage(draft);
@@ -341,6 +428,7 @@ async function produceValidatedDraft(
       prompt,
       nowMs,
       validationError,
+      preferredModel,
     );
     usage = {
       promptTokens: usage.promptTokens + repaired.usage.promptTokens,
@@ -378,14 +466,18 @@ async function produceValidatedDraft(
  */
 export async function parseTimerFromPrompt(
   prompt: string,
-  opts: { nowMs?: number } = {},
+  opts: { nowMs?: number; model?: string } = {},
 ): Promise<ParseTimerResult> {
   const nowMs = opts.nowMs ?? Date.now();
+  const preferredModel = opts.model?.trim() || AI_PARSE_MODEL;
   const started = Date.now();
-  const cacheKey = hashParsePrompt(prompt, nowBucket(nowMs));
+  const cacheKey = hashParsePrompt(
+    `${preferredModel}|${prompt}`,
+    nowBucket(nowMs),
+  );
 
   const { entry, cached } = await getOrRunCachedParse(cacheKey, () =>
-    produceValidatedDraft(prompt, nowMs),
+    produceValidatedDraft(prompt, nowMs, preferredModel),
   );
 
   return {

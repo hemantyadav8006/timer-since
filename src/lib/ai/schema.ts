@@ -79,10 +79,15 @@ export function draftToCreatePayload(draft: TimerDraft): CreateTimerPayload {
     icon: draft.icon.slice(0, 8),
     color: draft.color,
     category: draft.category,
-    tags: draft.tags.map((t) => t.trim()).filter(Boolean).slice(0, 20),
+    tags: draft.tags
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 20),
     mode: draft.mode,
     startDate:
-      draft.mode === "elapsed" ? draft.startDate : (draft.startDate ?? Date.now()),
+      draft.mode === "elapsed"
+        ? draft.startDate
+        : (draft.startDate ?? Date.now()),
     targetDate: draft.mode === "countdown" ? draft.targetDate : null,
     sound: draft.sound,
     milestoneConfig,
