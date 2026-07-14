@@ -40,7 +40,7 @@ export default memo(function TimerDisplay({
   const isCountdown = timer.mode === "countdown";
   const effectiveNow = getEffectiveNow(timer, now);
   const { done, celebrating } = useCountdownCelebration(timer, now, {
-    enabled: true,
+    enabled: !readOnly,
   });
 
   const elapsed: ElapsedTime = useMemo(() => {
@@ -60,6 +60,11 @@ export default memo(function TimerDisplay({
       ),
     [timer.startDate, timer.targetDate, isCountdown],
   );
+
+  const pausedSinceLabel = useMemo(() => {
+    if (timer.stoppedAt == null) return null;
+    return formatDate(new Date(timer.stoppedAt).toISOString());
+  }, [timer.stoppedAt]);
 
   return (
     <div className="space-y-5">
@@ -241,9 +246,13 @@ export default memo(function TimerDisplay({
 
       {timer.stopped && !done && (
         <div className="text-center text-sm text-app-warning">
-          {readOnly
-            ? "Timer is paused"
-            : "Timer paused — press Resync to resume"}
+          {pausedSinceLabel
+            ? readOnly
+              ? `Timer paused since ${pausedSinceLabel}`
+              : `Timer paused since ${pausedSinceLabel} — press Resync to resume`
+            : readOnly
+              ? "Timer is paused"
+              : "Timer paused — press Resync to resume"}
         </div>
       )}
     </div>

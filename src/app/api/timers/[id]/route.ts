@@ -140,6 +140,21 @@ export async function PUT(
       Object.assign(safe, youtube);
     }
 
+    // Keep freeze clock consistent: stop always stamps stoppedAt; resume clears it.
+    if (safe.stopped === true) {
+      if (
+        typeof safe.stoppedAt !== "number" ||
+        !Number.isFinite(safe.stoppedAt)
+      ) {
+        safe.stoppedAt =
+          typeof owned.timer.stoppedAt === "number" && owned.timer.stopped
+            ? owned.timer.stoppedAt
+            : Date.now();
+      }
+    } else if (safe.stopped === false) {
+      safe.stoppedAt = null;
+    }
+
     await connectMongo();
     const timer = await Timer.findByIdAndUpdate(id, safe, {
       new: true,

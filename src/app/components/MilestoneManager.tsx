@@ -30,6 +30,9 @@ const PRESET_DURATIONS: { label: string; ms: number }[] = [
   { label: "30 days", ms: 2_592_000_000 },
   { label: "100 days", ms: 8_640_000_000 },
   { label: "365 days", ms: 31_536_000_000 },
+  { label: "2 years", ms: 63_072_000_000 },
+  { label: "3 years", ms: 94_608_000_000 },
+  { label: "5 years", ms: 157_680_000_000 },
 ];
 
 type Props = {

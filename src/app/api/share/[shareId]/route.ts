@@ -39,7 +39,12 @@ export async function GET(
           youtubeThumbnail: timer.youtubeThumbnail ?? null,
         }),
       },
-      { status: 200 },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      },
     );
   } catch {
     return NextResponse.json(
