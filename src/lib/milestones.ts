@@ -16,6 +16,11 @@ const DEFAULT_MILESTONES: MilestoneDefinition[] = [
   { label: "2 Years", durationMs: 63_072_000_000, icon: "💎" },
   { label: "3 Years", durationMs: 94_608_000_000, icon: "👑" },
   { label: "5 Years", durationMs: 157_680_000_000, icon: "🌹" },
+  { label: "6 Years", durationMs: 189_216_000_000, icon: "🎖️" },
+  { label: "7 Years", durationMs: 220_752_000_000, icon: "🏵️" },
+  { label: "8 Years", durationMs: 252_288_000_000, icon: "🥇" },
+  { label: "9 Years", durationMs: 283_824_000_000, icon: "🎗️" },
+  { label: "10 Years", durationMs: 315_360_000_000, icon: "🎆" },
 ];
 
 export function getMilestonesForTimer(timer: TimerItem): MilestoneDefinition[] {
